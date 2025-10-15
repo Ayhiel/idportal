@@ -368,13 +368,16 @@ export default function AddStudent() {
     useEffect(() => {
         axios.get(`https://anabel-subproportional-divaricately.ngrok-free.dev/api/address`)
         .then(res => {
-        const clean = res.data.map(a => ({
+        const clean = Array.isArray(res.data) ? res.data.map(a => ({
             province: a.province.trim(),
             town: a.town.trim(),
             brgy: a.brgy.trim()
-        }));
+        })) : [];
         setAddresses(clean);
-        });
+        })
+        .catch(err => {
+            console.error("Error fetching addresses:", err);
+        })
     }, []);
 
 

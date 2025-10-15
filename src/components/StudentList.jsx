@@ -5,7 +5,7 @@ import CustomModal from "./CustomModal";
 import { useNavigate, useLocation } from "react-router-dom";
 
 export default function StudentList() {
-  
+
     const API_URL = process.env.REACT_APP_API_URL;
 
     const [students, setStudents] = useState([]);
@@ -43,7 +43,7 @@ useEffect(() => {
 
     const fetchStudents = async (search = '', strand = '', section = '') => {
       try {
-        const res = await axios.get(`${API_URL}/api/students?search=${search}&strand=${strand}&section=${section}`);
+        const res = await axios.get(`https://anabel-subproportional-divaricately.ngrok-free.dev/api/students?search=${search}&strand=${strand}&section=${section}`);
         setStudents(res.data.students);
 
         if (search || strand || section) {

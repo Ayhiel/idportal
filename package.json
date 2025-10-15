@@ -2,7 +2,6 @@
   "name": "client",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://ayhiel.github.io/id-card-maker",
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@imgly/background-removal": "^1.6.0",

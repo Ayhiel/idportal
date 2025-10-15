@@ -5,7 +5,8 @@ import CustomModal from "./CustomModal";
 import { useNavigate, useLocation } from "react-router-dom";
 
 export default function StudentList() {
-    const API_URL = `${window.location.protocol}//${window.location.hostname}:5000`;
+  
+    const API_URL = process.env.REACT_APP_API_URL;
 
     const [students, setStudents] = useState([]);
     const [totalCount, setTotalCount] = useState(0);

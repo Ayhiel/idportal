@@ -11,7 +11,7 @@ import { useAuth } from './AuthContext';
 // Function to add data to database
 export default function AddStudent() {
 
-    const API_URL = `${window.location.protocol}//${window.location.hostname}:5000`;
+    const API_URL = process.env.REACT_APP_API_URL;
 
     const { role } = useAuth();
     const isAdmin = role === 'admin';

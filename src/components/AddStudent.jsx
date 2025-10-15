@@ -366,7 +366,7 @@ export default function AddStudent() {
 
     // Load address list once
     useEffect(() => {
-        axios.get(`${API_URL}/api/address`)
+        axios.get(`https://anabel-subproportional-divaricately.ngrok-free.dev/api/address`)
         .then(res => {
         const clean = res.data.map(a => ({
             province: a.province.trim(),

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 export default function LoginPage() {
-    const API_URL = process.env.REACT_APP_API_URL;
+    const API_URL = `${window.location.protocol}//${window.location.hostname}:5000`;
     const { login } = useAuth();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');

@@ -118,7 +118,7 @@ export default function PrintId() {
     };
 
     return (
-        <div className="flex flex-col items-center p-4 mt-16">
+        <div className="max-h-[100vh] flex flex-col items-center p-4 mt-16">
             {/* <button
                 onClick={handleExportPdf}
                 className="no-print mb-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
@@ -127,25 +127,6 @@ export default function PrintId() {
             </button> */}
 
            <div className="w-full max-w-[297mm] flex flex-col xl:flex-row lg:items-center lg:gap-4 gap-2 mb-4">
-                <div className="w-full flex flex-row gap-2 items-center">
-                    <label htmlFor='strandSelect' className="text-lg font-semibold whitespace-nowrap">Select Strand</label>
-                    <select
-                        id="strandSelect"
-                        name="strandSelect"
-                        className="w-full flex-1 p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                        onChange={(e) => setSelectedStrand(e.target.value)}
-                    >
-                        <option value="">-- Choose a Strand --</option>
-                        <option value="ABM">Accountancy, Business, and Management (ABM)</option>
-                        <option value="STEM">Science, Technology, Engineering, and Mathematics (STEM)</option>
-                        <option value="HUMSS">Humanities and Social Sciences (HUMSS)</option>
-                        <option value="GAS">General Academic Strand (GAS)</option>
-                        <option value="HE">Home Economics (HE)</option>
-                        <option value="AFA">Agri-Fishery Arts (AFA)</option>
-                        <option value="ICT">Information and Communication Technology (ICT)</option>
-                        <option value="IA">Industrial Arts (IA)</option>
-                    </select>
-                </div>
                 <div className="w-full max-w-[297mm] flex flex-row justify-end items-center gap-4">
                     <p className="text-sm text-gray-600">
                         Page {pageIndex + 1} of {Math.ceil(filteredStudents.length / studentsPerPage)}
@@ -179,7 +160,7 @@ export default function PrintId() {
                         Print ID Cards
                     </button>
                     <button
-                        onClick={() => navigate('/setprint', { replace: true })}
+                        onClick={() => navigate('/students', { replace: true })}
                         className="no-print px-4 py-2 bg-gray-500 hover:bg-gray-400 text-white rounded"
                     >
                         Back
@@ -194,67 +175,90 @@ export default function PrintId() {
                     className="w-[297mm] h-[210mm] bg-white border px-4 pb-14 pt-4 border-gray-400 flex flex-col justify-between"
                 >
                     {/* FRONT LAYOUT */}
-                    <div className="grid grid-cols-5 gap-2 w-full h-[86.87mm]">
-                        {currentStudents.slice(0, 5).map((student, index) => {
-                            const middleInitial = student.middlename ? student.middlename.charAt(0) + "." : "";
+                        <div className="grid grid-cols-5 gap-2 h-[85.80mm]">
+                            {currentStudents.slice(0, 5).map((student, index) => {
+                                const middleInitial = student.middlename ? student.middlename.charAt(0) + "." : "";
+                                const isSHS = student.gradelevel === "g11" || student.gradelevel === "g12";
 
-                            return (
-                                <div
-                                    key={`front-${index}`}
-                                    style={{ backgroundImage: "url('/images/updatedFront.png')", width: '100%' }}
-                                    className="bg-cover bg-center border border-gray-300 p-2 flex flex-col items-center text-xs"
-                                >
+                                return (
                                     <div
-                                    className="border-2 border-yellow-500 bg-white"
-                                    style={{
-                                        width: '25mm',
-                                        height: '25mm',
-                                        marginTop: '26.2mm',
-                                        overflow: 'hidden'
-                                    }}
+                                        key={`front-${index}`}
+                                        style={{ backgroundImage: `url('${isSHS ? '/images/updatedFront.png' : '/images/jhsfront.png'}')`, width: '54.22mm' }}
+                                        className="bg-cover bg-center border border-gray-300 p-2 flex flex-col items-center text-xs"
                                     >
-                                    <img
-                                        src={`${API_URL}/${student.profile}`}
-                                        crossOrigin="anonymous"
-                                        alt="Profile"
-                                        className="w-full h-full object-cover"
-                                    />
-                                    </div>
+                                        <div
+                                        className={`border-2 ${isSHS ? 'border-yellow-500' : 'border-blue-950'} bg-white`}
+                                        style={{
+                                            width: '25mm',
+                                            height: '25mm',
+                                            marginTop: isSHS ? '25.5mm' : '24mm',
+                                            overflow: 'hidden'
+                                        }}
+                                        >
+                                        <img
+                                            src={`${API_URL}/${student.profile}`}
+                                            crossOrigin="anonymous"
+                                            alt="Profile"
+                                            className="w-full h-full object-cover"
+                                        />
+                                        </div>
 
-                                    <div className="text-yellow-500 font-extrabold mt-1 text-lg text-center uppercase">
-                                        {student.lastname}
-                                    </div>
-                                    <div style={{ fontSize: '12px' }} className="text-yellow-500 font-extrabold -mt-1 uppercase">
-                                        {student.firstname} {middleInitial}
-                                    </div>
-                                    <div style={{ fontSize: '10px' }} className="text-white font-bold">
-                                        LRN: {student.lrn}
-                                    </div>
-                                    <div style={{ fontSize: '8px', lineHeight: '10px' }} className="flex flex-col justify-center h-[32px] w-40 text-black mt-2.5 text-center font-extrabold uppercase">
-                                        {student.strand === 'AFA' || student.strand === 'HE' || student.strand === 'ICT' || student.strand === 'IA' ? (
-                                            <>
-                                                <p>{strandMap[student.strand]}</p>
-                                                <p style={{fontSize: '7px', marginTop: '2px'}} className="text-white font-bold">Technical-Vocational-Livelihood Track</p>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <p>{strandMap[student.strand]}</p>
-                                                <p style={{fontSize: '7px', marginTop: '2px'}} className="text-white font-bold">Academic Track</p>
-                                            </>
+                                        {/* <div className="flex flex-col items-center text-center text-yellow-500 leading-tight mt-[1.5mm] space-y-[2px]">
+                                            <div className="font-extrabold text-lg uppercase leading-tight">
+                                                {student.lastname}
+                                            </div>
+                                            <div className="font-extrabold uppercase">
+                                                {student.firstname} {middleInitial}
+                                            </div>
+                                            <div className="text-white font-bold" style={{ fontSize: '8px' }}>
+                                                LRN: {student.lrn}
+                                            </div>
+                                        </div> */}
+
+                                        <div className={`flex flex-col items-center text-center ${isSHS ? 'mt-[1.5mm]' : 'mt-[2.5mm]'}`}>
+                                            <div className={`${isSHS ? 'text-yellow-500' : 'text-blue-1000'} font-extrabold text-lg uppercase leading-tight`}>
+                                                {student.lastname}
+                                            </div>
+                                            <div className={`${isSHS ? 'text-yellow-500' : 'text-blue-1000'} font-extrabold uppercase`} style={{ fontSize: '8.5pt', lineHeight: '14px' }}>
+                                                {student.firstname} {middleInitial}
+                                            </div>
+                                            <div className={`text-white font-bold mt-1`} style={{ fontSize: '10px', lineHeight: '8px' }}>
+                                                LRN: {student.lrn}
+                                            </div>
+                                        </div>
+
+                                        {isSHS ? (
+                                            <div style={{ fontSize: '8px', lineHeight: '10px' }} className="flex flex-col justify-center h-[32px] w-40 text-black mt-3.5 text-center font-extrabold uppercase">
+                                            {student.strand === 'AFA' || student.strand === 'HE' || student.strand === 'ICT' || student.strand === 'IA' ? (
+                                                <>
+                                                    <p>{strandMap[student.strand]}</p>
+                                                    <p style={{fontSize: '7px', marginTop: '2px'}} className="text-white font-bold">Technical-Vocational-Livelihood Track</p>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <p>{strandMap[student.strand]}</p>
+                                                    <p style={{fontSize: '7px', marginTop: '2px'}} className="text-white font-bold">Academic Track</p>
+                                                </>
+                                            )}
+                                        </div>
+                                        ):(
+                                            ""
                                         )}
+                                        
                                     </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                                );
+                            })}
+                        </div>
+
                     <div className="h-[1px] bg-black"></div>
+
                     {/* BACK LAYOUT */}
-                    <div className="grid grid-cols-5 gap-2 w-full h-[87.7mm]">
+                    <div className="grid grid-cols-5 gap-2 h-[85.80mm]">
                         {currentStudents.slice(0, 5).map((student, index) => (
                             <div
                                 key={`back-${index}`}
-                                style={{ backgroundImage: "url('/images/updatedBack.png')" }}
-                                className="bg-cover bg-center border border-gray-400 p-2 text-xs relative"
+                                style={{ backgroundImage: "url('/images/updatedBack.png')", width: '54.22mm' }}
+                                className="bg-cover bg-center p-2 text-xs relative"
                             >
                                 <div
                                     className="h-full w-full flex flex-col justify-center items-center transform rotate-180 uppercase"

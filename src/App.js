@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate} from 'react-router-dom';
-import { Cog6ToothIcon, PrinterIcon, UserPlusIcon, UsersIcon } from '@heroicons/react/24/solid';
+import { Cog6ToothIcon, PrinterIcon, UserPlusIcon, UsersIcon, IdentificationIcon} from '@heroicons/react/24/solid';
 import Modal from 'react-modal';
 import AddStudent from './components/AddStudent';
 import StudentList from './components/StudentList';
@@ -60,30 +60,23 @@ function AppContent() {
                   />
               
                   <SidebarButton
-                    icon={<UsersIcon className="xl:w-10 w-8 mb-2" />}
-                    label="View Students"
+                    icon={<IdentificationIcon className="xl:w-10 w-8 mb-2" />}
+                    label="Print ID"
                     path="/students"
                     currentPath={currentPath}
-                    navigate={navigate}
-                  />
-                  <SidebarButton
-                    icon={<PrinterIcon className="xl:w-10 w-8 mb-2" />}
-                    label="Print ID"
-                    path="/setprint"
-                    currentPath={currentPath}
                     isActive={
-                      currentPath === '/setprint' ||
-                      currentPath.startsWith('/setprint/printid')
+                      currentPath === '/students' ||
+                      currentPath.startsWith('/students/printid')
                     }
                     navigate={navigate}
                   />
-                  <SidebarButton
+                  {/* <SidebarButton
                     icon={<Cog6ToothIcon className="xl:w-10 w-8 mb-2" />}
                     label="Settings"
                     path="/settings"
                     currentPath={currentPath}
                     navigate={navigate}
-                  />
+                  /> */}
                 
             </div>
               
@@ -92,11 +85,12 @@ function AppContent() {
             <div className="text-center pb-4 lg:text-xs text-white">
               <p>Version 1.0</p>
               <p>&copy; 2025</p>
+              <p><i><code>AAGerona</code></i></p>
             </div>
           </div>
       )}
 
-        <div className='h-screen flex-1 overflow-y-auto'>
+        <div className='h-screen flex-1 overflow-hidden'>
           <main>
             <Routes>
               <Route path='*' element={<NotFound />} />
@@ -105,7 +99,7 @@ function AppContent() {
               <Route path="/signup" element={<AddStudent />} />
               <Route path="/students" element={role === 'admin' ? <StudentList /> : <Navigate to='/login' />} />
               <Route path="/setprint" element={role === 'admin' ? <SetPrint /> : <Navigate to="/login" />} />
-              <Route path="/setprint/printid" element={role === 'admin' ? <PrintId /> : <Navigate to="/login" />} />
+              <Route path="/students/printid" element={role === 'admin' ? <PrintId /> : <Navigate to="/login" />} />
               <Route path="/settings" element={role === 'admin' ? <Settings /> : <Navigate to='/login' />} />
             </Routes>
           </main>

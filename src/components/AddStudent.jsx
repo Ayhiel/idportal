@@ -417,6 +417,9 @@ function createCropppedImage(imageSrc, cropPixels) {
       const { data, error } = await supabase
         .from('tbladdress')
         .select('province, town, brgy')
+        .order('province', { ascending: true })
+        .order('town', { ascending: true })
+        .order('brgy', { ascending: true })
         .range(from, to);
 
       if (error) throw error;

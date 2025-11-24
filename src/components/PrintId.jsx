@@ -163,7 +163,7 @@ export default function PrintId() {
                         onClick={() => navigate('/students', { replace: true })}
                         className="no-print px-4 py-2 bg-gray-500 hover:bg-gray-400 text-white rounded"
                     >
-                        Back
+                        Close
                     </button>
                 </div>
             </div>

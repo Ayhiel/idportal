@@ -5,12 +5,12 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import CustomModal from "./CustomModal";
 import Cropper from 'react-easy-crop';
 import { useAuth } from './AuthContext';
-
+import { supabase } from './supabaseClient';
 
 // Function to add data to database
 export default function AddStudent() {
 
-    const API_URL = `${window.location.protocol}//${window.location.hostname}:5000`;
+    const API_URL = process.env.REACT_APP_API_URL;
 
     const { role } = useAuth();
     const isAdmin = role === 'admin';
@@ -28,6 +28,7 @@ export default function AddStudent() {
     const [originalProfile, setOriginalProfile] = useState('');
     
     const [addresses, setAddresses] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     const [form, setForm] = useState({ lrn: '', lastname: '', firstname: '', middlename: '', parent: '', parentnumber: '', brgy: '', town: '', province: '', profile: '', gradelevel:'', strand: '' , section: ''});
     const [msg, setMsg] = useState('');
@@ -362,7 +363,7 @@ function createCropppedImage(imageSrc, cropPixels) {
         if (profileFile) {
             formData.append('profile', profileFile); // new uploaded image
         } else if (originalProfile) {
-            formData.append('profile', originalProfile); // keep existing
+            formData.append('profile_url', originalProfile); // keep existing
         }
 
         try {
@@ -404,36 +405,71 @@ function createCropppedImage(imageSrc, cropPixels) {
         return () => clearTimeout(timer);
     }, [msg]);
 
-    // Load address list once
-    useEffect(() => {
-        axios.get(`${API_URL}/api/address`)
-        .then(res => {
-        const clean = Array.isArray(res.data) ? res.data.map(a => ({
-            province: a.province.trim(),
-            town: a.town.trim(),
-            brgy: a.brgy.trim()
-        })) : [];
+
+  // Fetch all addresses in batches (works even if total rows unknown)
+  const fetchAllAddresses = async () => {
+    let allData = [];
+    let from = 0;
+    const batchSize = 1000;
+
+    while (true) {
+      const to = from + batchSize - 1;
+      const { data, error } = await supabase
+        .from('tbladdress')
+        .select('province, town, brgy')
+        .range(from, to);
+
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+
+      allData = allData.concat(data);
+      from += batchSize;
+    }
+
+    return allData;
+  };
+
+  // Load addresses on mount
+  useEffect(() => {
+    const loadAddresses = async () => {
+        try {
+            const data = await fetchAllAddresses();
+
+            const clean = data
+            .map(a => ({
+                province: a.province?.trim(),
+                town: a.town?.trim(),
+                brgy: a.brgy?.trim()
+            }))
+            .filter(a => a.province && a.town && a.brgy);
+
         setAddresses(clean);
-        })
-        .catch(err => {
-            console.error("Error fetching addresses:", err);
-        })
-    }, []);
+        } catch (err) {
+            console.error('Error fetching addresses:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    loadAddresses();
+  }, []);
 
-
-      // ✅ Build unique lists based on what the user has chosen
-    const provinces = [...new Set(addresses.map(a => a.province))];
-    const towns = [...new Set(
-        addresses
+  // Build unique lists for selects
+  const provinces = [...new Set(addresses.map(a => a.province))];
+  const towns = [
+    ...new Set(
+      addresses
         .filter(a => a.province === form.province)
         .map(a => a.town)
-    )];
-    const barangays = [...new Set(
-        addresses
+    )
+  ];
+  const barangays = [
+    ...new Set(
+      addresses
         .filter(a => a.province === form.province && a.town === form.town)
         .map(a => a.brgy)
-    )];
+    )
+  ];
 
     //   Use to update Input Field
     const updatedField = (key, value) => {
@@ -504,12 +540,22 @@ function createCropppedImage(imageSrc, cropPixels) {
                     value={form.province}
                     onChange={e => {
                         updatedField('province', e.target.value);
+                        updatedField('town', '');
+                        updatedField('brgy', '');
    
                     }}
                     required
                     >
-                    <option value="">Select Province</option>
-                    {provinces.map(p => <option key={p} value={p}>{p}</option>)}
+                      {loading ? (
+    <option value="">Loading...</option>
+  ) : (
+    <>
+      <option value="">Select Province</option>
+      {provinces.map(p => (
+        <option key={p} value={p}>{p}</option>
+      ))}
+    </>
+  )}
                 </select>
 
                 <select
@@ -517,6 +563,7 @@ function createCropppedImage(imageSrc, cropPixels) {
                     value={form.town}
                     onChange={e => {
                         updatedField('town', e.target.value);
+                        updatedField('brgy', '');
                         
                     }}
                     required

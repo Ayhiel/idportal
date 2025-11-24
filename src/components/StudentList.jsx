@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
-import { BackwardIcon, ForwardIcon, PencilSquareIcon, TrashIcon, UserCircleIcon} from '@heroicons/react/24/solid';
+import { BackwardIcon, CheckIcon, ForwardIcon, PencilSquareIcon, TrashIcon, UserCircleIcon} from '@heroicons/react/24/solid';
 import CustomModal from "./CustomModal";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -134,7 +134,7 @@ export default function StudentList() {
 
       if (!selectedRows || selectedRows.length === 0) {
         // Show your modal
-        setModalTitle("Print ID");
+        setModalTitle("Generate ID");
         setModalMessage("Please select student(s) to continue.");
         setShowConfirm(false);
         setModalOpen(true);
@@ -176,7 +176,7 @@ export default function StudentList() {
         
           <div className="sticky top-12 z-10 mx-auto bg-white flex flex-col lg:flex-row items-center gap-2 max-w-full">
             <div className="flex flex-col w-full gap-2 lg:flex-row">
-              <input className="text-xs lg:text-sm w-full flex-1 border border-gray-400 p-2 rounded" placeholder="Type name... (e.g. john)" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              <input className="text-xs lg:text-sm w-full flex-1 border border-gray-400 p-2 rounded" placeholder="Type LRN or name here" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
               <select
                 value={gradelevel}
                 className="w-full flex-1 text-xs lg:text-sm p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
@@ -239,7 +239,7 @@ export default function StudentList() {
                   className="hidden lg:block text-xs lg:text-sm w-full bg-sky-900 text-white p-3 rounded hover:bg-sky-700"
                   onClick={handleFetchSelected}
               >
-                  Print ID
+                  Generate ID
               </button>
             </div>
 
@@ -354,7 +354,7 @@ export default function StudentList() {
                         <td className="p-2 text-center">{s.gradelevel}</td>
                         <td className="p-2 text-center">{s.strand}</td>
                         <td className="p-2 text-center">{s.section}</td>
-                        <td className="border p-2 text-center">
+                        <td className="border p-2">
                           <label className={`inline-flex items-center gap-2 ${s.claimed ? '' : 'cursor-pointer'}`}>
                             {/* Toggle Switch */}
                             <div className="relative z-5">
@@ -365,9 +365,15 @@ export default function StudentList() {
                                 disabled={s.claimed}
                                 onChange={(e) => handleToggleClaimed(s.id, e.target.checked)}
                               />
-                              <div className="w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors"></div>
-                              {s.claimed ? "" : <div className="absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition-all peer-checked:translate-x-5 shadow"></div>}
-                            </div>
+                              <div className="w-11 h-6 bg-gray-400 rounded-full peer-checked:bg-green-500 transition-colors"></div>
+                              {s.claimed ? (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <CheckIcon className="w-4 h-4 text-white" />
+                              </div>
+                              ) : (
+                                <div className="absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition-all peer-checked:translate-x-5 shadow"></div>
+                              )}
+                              </div>
 
                             {/* Label Text */}
                             <div className="flex flex-col items-center text-[8pt] font-medium">

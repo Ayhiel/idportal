@@ -5,6 +5,7 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@imgly/background-removal": "^1.6.0",
+    "@supabase/supabase-js": "^2.84.0",
     "@tensorflow-models/body-pix": "^2.2.1",
     "@tensorflow/tfjs": "^4.22.0",
     "@testing-library/dom": "^10.4.0",

@@ -490,7 +490,10 @@ function createCropppedImage(imageSrc, cropPixels) {
   return (
     <div className='py-8 max-h-[100vh] overflow-auto'>
         {loading ? (
-        <div className="shadow-lg rounded-xl max-w-xl mx-auto p-4 mt-8">Loading...</div>
+        <div className="max-w-xl mx-auto h-[100vh] flex flex-col gap-2 items-center justify-center">
+            <h3 className='text-sky-700 font-bold text-3xl'>CNHS ID PORTAL</h3>
+            <h4>Loading data... please wait...</h4>
+        </div>
         ) : (
             <>
         <div className="shadow-lg rounded-xl max-w-xl mx-auto p-4 mt-8">

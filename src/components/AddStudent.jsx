@@ -1,458 +1,198 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import Webcam from 'react-webcam';
-import axios from 'axios';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import Webcam from 'react-webcam';
 import CustomModal from "./CustomModal";
 import Cropper from 'react-easy-crop';
-import { useAuth } from './AuthContext';
 import { supabase } from './supabaseClient';
 
 // Function to add data to database
 export default function AddStudent() {
+    // Setting up the signup form
+    const [form, setForm] = useState({ lrn: '', lastname: '', firstname: '', middlename: '', parent: '', parentnumber: '', brgy: '', town: '', province: '', profile_url: '', gradelevel:'', strand: '' , section: ''});
+    
+    // Setting up profile file
+    const { data: { publicUrl } } = supabase
+        .storage
+        .from('id-profile')
+        .getPublicUrl('Profile.png');
 
-    const API_URL = process.env.REACT_APP_API_URL;
+    const DEFAULT_PROFILE = publicUrl;
 
-    const { role } = useAuth();
-    const isAdmin = role === 'admin';
+    const [profileFile, setProfileFile] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(DEFAULT_PROFILE);
+    const [uploadedImageUrl, setUploadedImageUrl] = useState('');
 
+    // Opening Custom Modal
     const [modalOpen, setModalOpen] = useState(false);
     const [modalTitle, setModalTitle] = useState("");
     const [modalMessage, setModalMessage] = useState("");
+    const [isSuccess, setIsSuccess] = useState(false);
+
+    // Image Capture and Cropping
+    const webcamRef = useRef(null);
+    const fileInputRef = useRef(null);
+
+    const [useWebcam, setUseWebcam] = useState(false);
+    const [showPreview, setShowPreview] = useState(false);
+    const [capturedDataUrl, setCapturedDataUrl] = useState('');
+    const [crop, setCrop] = useState({x: 0, y: 0});
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+    const [showUploadCrop, setShowUploadCrop] = useState(false);
+
+    // Setting up address list
+    const [addresses, setAddresses] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
     const studentid = queryParams.get('id');
-    const [originalLrn, setOriginalLRN] = useState('');
-  
-    const [profileFile, setProfileFile] = useState(null);
-    const [originalProfile, setOriginalProfile] = useState('');
     
-    const [addresses, setAddresses] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    const [form, setForm] = useState({ lrn: '', lastname: '', firstname: '', middlename: '', parent: '', parentnumber: '', brgy: '', town: '', province: '', profile: '', gradelevel:'', strand: '' , section: ''});
-    const [msg, setMsg] = useState('');
-    const [isSuccess, setIsSuccess] = useState(false);
-    
-    const fileInputRef = useRef(null);
-    const [previewUrl, setPreviewUrl] = useState('/images/Profile.png');
-    const webcamRef = useRef(null);
-    const [useWebcam, setUseWebcam] = useState(false);
-    const [showPreview, setShowPreview] = useState(false);
-    const [capturedDataUrl, setCapturedDataUrl] = useState('');
-
-    const [crop, setCrop] = useState({x: 0, y: 0});
-    const [zoom, setZoom] = useState(1);
-    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-
-    const [uploadedImageUrl, setUploadedImageUrl] = useState('');
-    const [showUploadCrop, setShowUploadCrop] = useState(false);
-
     const navigate = useNavigate();
 
     const [isSHS, setIsSHS] = useState(false);
-    const [isSenior, setIsSenior] = useState(false);
 
-    // const removeImageBackground = async (imageDataUrl) => {
-    // const file = dataURLtoFile(imageDataUrl, 'input.png');
-    // const resultBlob = await removeBackground(file); // returns Blob
-    // return await blobToDataURL(resultBlob);
-    // };
+    // Convert base64 to File
+    const dataURLtoFile = (dataUrl, filename) => {
+        const arr = dataUrl.split(",");
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        const u8arr = new Uint8Array(bstr.length);
+        for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
+        return new File([u8arr], filename, { type: mime });
+    };
 
-    const blobToDataURL = (blob) => {
+
+    // Crop image
+    const createCroppedImage = (imageSrc, cropPixels) => {
         return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
+        const image = new Image();
+        image.crossOrigin = "anonymous";
+        image.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = cropPixels.width;
+            canvas.height = cropPixels.height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(
+            image,
+            cropPixels.x,
+            cropPixels.y,
+            cropPixels.width,
+            cropPixels.height,
+            0,
+            0,
+            cropPixels.width,
+            cropPixels.height
+            );
+            resolve(canvas.toDataURL("image/png"));
+        };
+        image.onerror = reject;
+        image.src = imageSrc;
         });
     };
 
-
+    // Fetch all students during editing
     useEffect(() => {
-        
-        if(studentid) {
-            axios.get(`${API_URL}/api/students/${studentid}`)
-            .then(res => {
-                const s = res.data;
-                const isSeniorLevel = s.gradelevel === "g11" || s.gradelevel === "g12";
-                setIsSenior(isSeniorLevel);
+        if (!studentid) return;
 
-                let brgy = '', town = '', province = '';
+        const fetchStudent = async () => {
+        const { data, error } = await supabase
+            .from("tblstudents")
+            .select("*")
+            .eq("id", studentid)
+            .maybeSingle();
 
-                if (s.address) {
-                // split by comma, remove leading/trailing spaces
-                const parts = s.address.split(',').map(p => p.trim());
+        if (error) return console.error("Failed to fetch student:", error);
 
-                // parts[0] -> "brgy. Pinagkamaligan"
-                if (parts[0]) {
-                    brgy = parts[0]
-                    .replace(/^(brgy\.?|barangay)\s*/i, '') // remove "brgy." or "barangay" (case-insensitive)
-                    .trim();
-                }
-
-                // parts[1] -> "Calauag"
-                if (parts[1]) town = parts[1].trim();
-
-                // parts[2] -> "Quezon"
-                if (parts[2]) province = parts[2].trim();
-                }
-
-                setForm({
-                    lrn: s.lrn || '',
-                    lastname: s.lastname || '',
-                    firstname: s.firstname || '',
-                    middlename: s.middlename || '',
-                    parent: s.parent || '',
-                    parentnumber: s.parentnumber || '',
-                    brgy,
-                    town,
-                    province,
-                    profile: s.profile || '',
-                    gradelevel: s.gradelevel || '',
-                    strand: s.strand || '',
-                    section: s.section || '',
-                });
-                setOriginalLRN(s.lrn);
-                if(s.profile) {
-                    setPreviewUrl(`${API_URL}/${s.profile}`);
-                }
-                setOriginalProfile(s.profile || ''); // Save original filename
-            })
-            .catch(err => console.error('Failed to fetch student data', err));
-        }
-    }, [studentid]);
-
-    const videoConstraints = {
-         width: { ideal: 1920 },
-  height: { ideal: 1080 },
-  facingMode: 'environment'
-    };
-
-const captureFullRes = () => {
-    const video = webcamRef.current?.video;
-    if (!video) return;
-
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL("image/png");
-};
-
-
-
-    const handleCapture = () => {
-        const imageSrc = captureFullRes();
-        setPreviewUrl(imageSrc);
-        setCapturedDataUrl(imageSrc);       // store for confirmation preview
-        setShowPreview(true);               // show preview modal
-        const file = dataURLtoFile(imageSrc, 'captured.png');
-        setProfileFile(file);
-        setUseWebcam(false); // optionally hide webcam after capture
-    };
-
-    const cancelCapturedImage = () => {
-        setCapturedDataUrl('');
-        setPreviewUrl('/images/Profile.png'); // or retain old preview if desired
-        setProfileFile(null); // clear captured File
-        setUseWebcam(true);   // show the webcam again
-        setShowPreview(false); // hide the preview image if you're toggling it
-    };
-
-    // Convert base64 image to File
-    const dataURLtoFile = (dataUrl, filename) => {
-    if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) {
-        throw new Error('Invalid data URL passed to dataURLtoFile');
-    }
-
-    const arr = dataUrl.split(',');
-    const match = arr[0].match(/:(.*?);/);
-    if (!match) {
-        throw new Error('No MIME type found in data URL');
-    }
-
-    const mime = match[1];
-    const bstr = atob(arr[1]);
-    const u8arr = new Uint8Array(bstr.length);
-    for (let i = 0; i < bstr.length; i++) {
-        u8arr[i] = bstr.charCodeAt(i);
-    }
-    return new File([u8arr], filename, { type: mime });
-    };
-
-
-    // function createCropppedImage(imageSrc, cropPixels, outputSize = 1000) {
-    //     return new Promise((resolve, reject) => {
-    //         const image = new Image();
-    //         image.onload = () => {
-    //         const canvas = document.createElement('canvas');
-    //         canvas.width = outputSize;
-    //         canvas.height = outputSize;
-    //         const ctx = canvas.getContext('2d');
-
-    //         // Determine scaling factor to fill outputSize
-    //         const scale = outputSize / Math.max(cropPixels.width, cropPixels.height);
-
-    //         const destWidth = cropPixels.width * scale;
-    //         const destHeight = cropPixels.height * scale;
-
-    //         // Center the cropped image in the square canvas
-    //         const dx = (outputSize - destWidth) / 2;
-    //         const dy = (outputSize - destHeight) / 2;
-
-    //         ctx.drawImage(
-    //             image,
-    //             cropPixels.x,
-    //             cropPixels.y,
-    //             cropPixels.width,
-    //             cropPixels.height,
-    //             dx,
-    //             dy,
-    //             destWidth,
-    //             destHeight
-    //         );
-
-    //         resolve(canvas.toDataURL('image/png'));
-    //         };
-    //         image.onerror = reject;
-    //         image.src = imageSrc;
-    //     });
-    // }
-
-function createCropppedImage(imageSrc, cropPixels) {
-    return new Promise((resolve, reject) => {
-        const image = new Image();
-        image.crossOrigin = "anonymous";  // important for file uploads
-
-        image.onload = () => {
-            // Use original crop dimensions = MAX resolution possible
-            const outputWidth = cropPixels.width;
-            const outputHeight = cropPixels.height;
-
-            const canvas = document.createElement("canvas");
-            canvas.width = outputWidth;
-            canvas.height = outputHeight;
-
-            const ctx = canvas.getContext("2d");
-
-            ctx.drawImage(
-                image,
-                cropPixels.x,
-                cropPixels.y,
-                cropPixels.width,
-                cropPixels.height,
-                0,
-                0,
-                outputWidth,
-                outputHeight
-            );
-
-            resolve(canvas.toDataURL("image/png", 1.0));
-        };
-
-        image.onerror = reject;
-        image.src = imageSrc;
-    });
-}
-
-
-
-    const onCrop = useCallback((_, croppedPixels) => {
-        setCroppedAreaPixels(croppedPixels);
-    }, []);
-
-
-    const checkInternetAccess = async () => {
-        try {
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 3000); // abort after 3 seconds
-
-            await fetch("https://www.google.com/generate_204", {
-            method: "GET",
-            mode: "no-cors",
-            signal: controller.signal,
-            });
-
-            clearTimeout(timeout);
-            return true; // successful fetch means online
-        } catch (error) {
-            return false; // network error, timeout, or blocked
-        }
-    };
-
-
-    const getCroppedImage = async () => {
-    if (!croppedAreaPixels || !capturedDataUrl) return;
-
-    try {
-        const cropped = await createCropppedImage(
-            capturedDataUrl,
-            croppedAreaPixels,
-            1 // or 2 for super sharp
-        );
-
-        setPreviewUrl(cropped);
-        setProfileFile(
-            dataURLtoFile(
-                cropped,
-                `${form.lastname?.toUpperCase()}_${form.lrn}.png`
-            )
-        );
-        setShowPreview(false);
-    } catch (error) {
-        console.error("Cropping failed:", error);
-    }
-};
-
-
-
-    const handleCloseModal = () => {
-    setModalOpen(false);
-
-    if (isSuccess && studentid) {
-        const filters = JSON.parse(localStorage.getItem('student-filters') || '{}');
-        const search = filters.search || '';
-        const gradelevel = filters.gradelevel || '';
-        const strand = filters.strand || '';
-        const section = filters.section || '';
-
-        navigate(
-        `/students?search=${encodeURIComponent(search)}&gradelevel=${encodeURIComponent(gradelevel)}&strand=${encodeURIComponent(strand)}&section=${encodeURIComponent(section)}`,
-        { replace: true }
-        );
-    }
-    };
-
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setMsg('');
-
-        const isEditing = !!studentid;
-
-        try {
-            // 🔍 LRN uniqueness check
-            if (!isEditing || (isEditing && form.lrn !== originalLrn)) {
-            const checkUrl = `${API_URL}/api/check-lrn/${form.lrn}${isEditing ? `?excludeId=${studentid}` : ''}`;
-            const checkRes = await axios.get(checkUrl);
-
-            if (checkRes.data.exists) {
-                setModalOpen(true);
-                setModalTitle("Warning!");
-                setModalMessage("The LRN you entered already exists. Please provide a unique LRN.");
-                return;
-            }
-            }
-        } catch (err) {
-            setModalOpen(true);
-            setModalTitle("Error!");
-            setModalMessage("Failed to validate or save LRN.");
-            return;
-        }
-
-        // 🧩 Build form data
-        const formData = new FormData();
-        for (const key in form) {
-            if (key !== 'profile') {
-            formData.append(key, form[key] || '');
-            }
-        }
-
-        if (profileFile) {
-            formData.append('profile', profileFile); // new uploaded image
-        } else if (originalProfile) {
-            formData.append('profile_url', originalProfile); // keep existing
-        }
-
-        try {
-            if (isEditing) {
-            // ✅ Use POST for update
-            await axios.post(`${API_URL}/api/students/update/${studentid}`, formData);
-            setModalOpen(true);
-            setModalTitle("Update Student");
-            setModalMessage("Student updated successfully.");
-            setIsSuccess(true);
-            } else {
-            // ✅ Use POST for add
-            await axios.post(`${API_URL}/api/students`, formData);
-            setModalOpen(true);
-            setModalTitle("Add Student");
-            setModalMessage("Student added successfully.");
+        if (data) {
+            const parts = data.address?.split(",").map(p => p.trim()) || [];
             setForm({
-                lrn: '', lastname: '', firstname: '', middlename: '',
-                parent: '', parentnumber: '', brgy: '', town: '', province: '', gradelevel: '',
-                strand: '', section: '', profile: null
+            ...data,
+            brgy: parts[0]?.replace(/^(brgy\.?|barangay)\s*/i, "") || "",
+            town: parts[1] || "",
+            province: parts[2] || ""
             });
-            if (fileInputRef.current) fileInputRef.current.value = '';
-            setPreviewUrl('/images/Profile.png');
-            setIsSuccess(true);
-            }
-        } catch (err) {
-            console.error('Submit error:', err);
-            setModalOpen(true);
-            setModalTitle("Error!");
-            setModalMessage(isEditing ? 'Failed to update student' : 'Failed to add student');
+            setPreviewUrl(data.profile || DEFAULT_PROFILE);
         }
-    };
+        };
+        fetchStudent();
+    }, [studentid, DEFAULT_PROFILE]);
 
+    // Fetch all addresses with caching
+    const fetchAllAddresses = async () => {
+    const CACHE_KEY = "tbladdress_cache";
+    const CACHE_TIME_KEY = "tbladdress_cache_time";
+    const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours (optional)
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setMsg('');
-        }, 3000);
-        return () => clearTimeout(timer);
-    }, [msg]);
+    // 1️⃣ Check localStorage first
+    const cached = localStorage.getItem(CACHE_KEY);
+    const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
 
+    if (cached && cachedTime) {
+        const age = Date.now() - Number(cachedTime);
 
-  // Fetch all addresses in batches (works even if total rows unknown)
-  const fetchAllAddresses = async () => {
+        // If cache is fresh (< 24 hours)
+        if (age < CACHE_EXPIRY) {
+        console.log("Loaded tbladdress from cache");
+        return JSON.parse(cached);
+        }
+    }
+
+    // 2️⃣ No valid cache → fetch from Supabase in batches
+    console.log("Fetching tbladdress from Supabase...");
     let allData = [];
     let from = 0;
     const batchSize = 1000;
 
     while (true) {
-      const to = from + batchSize - 1;
-      const { data, error } = await supabase
-        .from('tbladdress')
-        .select('province, town, brgy')
-        .order('province', { ascending: true })
-        .order('town', { ascending: true })
-        .order('brgy', { ascending: true })
+        const to = from + batchSize - 1;
+
+        const { data, error } = await supabase
+        .from("tbladdress")
+        .select("province, town, brgy")
+        .order("province", { ascending: true })
+        .order("town", { ascending: true })
+        .order("brgy", { ascending: true })
         .range(from, to);
 
-      if (error) throw error;
-      if (!data || data.length === 0) break;
+        if (error) throw error;
 
-      allData = allData.concat(data);
-      from += batchSize;
+        if (!data || data.length === 0) break;
+
+        allData = allData.concat(data);
+        from += batchSize;
     }
 
+    // 3️⃣ Save to cache
+    localStorage.setItem(CACHE_KEY, JSON.stringify(allData));
+    localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
+
+    console.log("Saved tbladdress to cache");
+
     return allData;
-  };
-
-  // Load addresses on mount
-  useEffect(() => {
-    const loadAddresses = async () => {
-        try {
-            const data = await fetchAllAddresses();
-
-            const clean = data
-            .map(a => ({
-                province: a.province?.trim(),
-                town: a.town?.trim(),
-                brgy: a.brgy?.trim()
-            }))
-            .filter(a => a.province && a.town && a.brgy);
-
-        setAddresses(clean);
-        } catch (err) {
-            console.error('Error fetching addresses:', err);
-        } finally {
-            setLoading(false);
-        }
     };
+
+    // Load addresses on mount
+    useEffect(() => {
+        const loadAddresses = async () => {
+            try {
+                const data = await fetchAllAddresses();
+
+                const clean = data
+                .map(a => ({
+                    province: a.province?.trim(),
+                    town: a.town?.trim(),
+                    brgy: a.brgy?.trim()
+                }))
+                .filter(a => a.province && a.town && a.brgy);
+
+            setAddresses(clean);
+            } catch (err) {
+                console.error('Error fetching addresses:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
 
     loadAddresses();
   }, []);
@@ -474,6 +214,159 @@ function createCropppedImage(imageSrc, cropPixels) {
     )
   ];
 
+
+    // Set Capture Resolution
+    const videoConstraints = {
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        facingMode: 'environment'
+    };
+
+    // Capture full resolution from webcam
+    const captureFullRes = () => {
+        const video = webcamRef.current?.video;
+        if (!video) return;
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL("image/png");
+    };
+
+    // Handle Capture of image
+    const handleCapture = () => {
+        const dataUrl = captureFullRes();
+        if (!dataUrl) return;
+        setCapturedDataUrl(dataUrl);
+        setPreviewUrl(dataUrl);
+        setShowPreview(true);
+        setUseWebcam(false);
+
+        const file = dataURLtoFile(dataUrl, `captured_${Date.now()}.png`);
+        setProfileFile(file);
+    };
+
+    // Handle Cancel Capture
+    const cancelCapturedImage = () => {
+        setCapturedDataUrl("");
+        setPreviewUrl(DEFAULT_PROFILE);
+        setProfileFile(null);
+        setUseWebcam(true);
+        setShowPreview(false);
+    };
+
+
+    // Get the cropped image
+    const getCroppedImage = async () => {
+        if (!croppedAreaPixels || !capturedDataUrl) return;
+        try {
+        const cropped = await createCroppedImage(capturedDataUrl, croppedAreaPixels);
+        setPreviewUrl(cropped);
+        setProfileFile(dataURLtoFile(cropped, `${form.lastname}_${form.lrn}.png`));
+        setShowPreview(false);
+        } catch (err) {
+        console.error("Cropping failed:", err);
+        }
+    };
+
+    // Set the cropped pixels
+    const onCropComplete = useCallback((_, croppedPixels) => {
+        setCroppedAreaPixels(croppedPixels);
+    }, []);
+
+
+    // Upload picture to Supabase Storage
+    const uploadProfile = async (file) => {
+        if (!file) return DEFAULT_PROFILE;
+
+        try {
+            const safeFilename = file.name.replace(/[^a-zA-Z0-9_\-.]/g, "_");
+            const filename = `${safeFilename}`;
+
+            const { error } = await supabase.storage
+                .from("id-profile")
+                .upload(filename, file, { contentType: file.type });
+
+            if (error) {
+                console.error("Upload error:", error);
+                return DEFAULT_PROFILE; // Fallback to default
+            }
+
+            const { data: { publicUrl: uploadedUrl } } = supabase.storage
+                .from("id-profile")
+                .getPublicUrl(filename);
+            return uploadedUrl;
+        } catch (err) {
+            console.error("Unexpected error:", err);
+            return DEFAULT_PROFILE;
+        }
+    };
+
+
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+        // Check LRN uniqueness
+        const { data: existing } = await supabase
+            .from("tblstudents")
+            .select("id")
+            .eq("lrn", form.lrn)
+            .maybeSingle();
+
+        if (existing && existing.id !== studentid) {
+            setModalOpen(true);
+            setModalTitle("Warning!");
+            setModalMessage("The LRN already exists. Please enter a unique LRN.");
+            return;
+        }
+
+        const profileUrl = await uploadProfile(profileFile);
+        const date_added = new Date();
+
+        if (studentid) {
+            // Update student
+            const { error } = await supabase
+            .from("tblstudents")
+            .update({ ...form, profile_url: profileUrl})
+            .eq("id", studentid);
+            if (error) throw error;
+        } else {
+            // Insert new student
+            const { error } = await supabase
+            .from("tblstudents")
+            .insert([{ ...form, profile_url: profileUrl, date_added }]);
+            if (error) throw error;
+            setForm({
+            lrn: "", lastname: "", firstname: "", middlename: "",
+            parent: "", parentnumber: "", brgy: "", town: "", province: "",
+            gradelevel: "", strand: "", section: ""
+            });
+            setPreviewUrl(DEFAULT_PROFILE);
+            setProfileFile(null);
+        }
+
+        setModalOpen(true);
+        setModalTitle(studentid ? "Update Student" : "Add Student");
+        setModalMessage(studentid ? "Student updated successfully" : "Student added successfully");
+        setIsSuccess(true);
+
+        } catch (err) {
+        console.error(err);
+        setModalOpen(true);
+        setModalTitle("Error!");
+        setModalMessage("Failed to save student");
+        }
+    };
+
+    // Handle Closing the modal
+    const handleCloseModal = () => {
+        setModalOpen(false);
+        if (isSuccess && navigate) navigate("/students");
+    };
+
+
     //   Use to update Input Field
     const updatedField = (key, value) => {
         setForm(prev => ({ ...prev, [key]: value }));
@@ -491,7 +384,6 @@ function createCropppedImage(imageSrc, cropPixels) {
     <div className='py-8 max-h-[100vh] overflow-auto'>
         {loading ? (
         <div className="max-w-xl mx-auto h-[100vh] flex flex-col gap-2 items-center justify-center">
-            <h3 className='text-sky-700 font-bold text-3xl'>CNHS ID PORTAL</h3>
             <h4>Loading data... please wait...</h4>
         </div>
         ) : (
@@ -613,7 +505,7 @@ function createCropppedImage(imageSrc, cropPixels) {
                     <option value="g11">Grade 11</option>
                     <option value="g12">Grade 12</option>
                 </select>
-                <div className={`${(isSHS || isSenior) ? "block" : "hidden"}`}>
+                <div className={`${isSHS ? "block" : "hidden"}`}>
                     <select
                         id="strandSelect"
                         name="strandSelect"
@@ -648,7 +540,7 @@ function createCropppedImage(imageSrc, cropPixels) {
                         <option value="aag">AAG</option>
                     </select>
                 </div>
-                {isAdmin && (
+                
                     <div className="mb-4 flex flex-row items-center gap-2">
                      {/* Preview Image */}
                     <img
@@ -667,9 +559,11 @@ function createCropppedImage(imageSrc, cropPixels) {
                         onChange={e => {
                             const file = e.target.files[0];
                             if (!file) {
-                            setPreviewUrl('/images/Profile.png');
+                            setPreviewUrl(DEFAULT_PROFILE);
+                            setProfileFile(null);
                             return;
                             }
+                            setProfileFile(file); 
                             const url = URL.createObjectURL(file);
                             setUploadedImageUrl(url);
                             setShowUploadCrop(true);
@@ -735,7 +629,7 @@ function createCropppedImage(imageSrc, cropPixels) {
                                 aspect={1}
                                 onCropChange={setCrop}
                                 onZoomChange={setZoom}
-                                onCropComplete={onCrop}
+                                onCropComplete={onCropComplete}
                                 />
                             </div>
 
@@ -761,7 +655,7 @@ function createCropppedImage(imageSrc, cropPixels) {
                                         if (!croppedAreaPixels) return;
 
                                         try {
-                                            const cropped = await createCropppedImage(uploadedImageUrl, croppedAreaPixels, 1000);
+                                            const cropped = await createCroppedImage(uploadedImageUrl, croppedAreaPixels, 1000);
                                             const finalImage = cropped;
 
                                             setPreviewUrl(finalImage);
@@ -789,7 +683,7 @@ function createCropppedImage(imageSrc, cropPixels) {
                                         setShowUploadCrop(false);
                                         setUploadedImageUrl('');
                                         setProfileFile(null);
-                                        setPreviewUrl('/images/Profile.png');
+                                        setPreviewUrl(DEFAULT_PROFILE);
                                     }}
                                     className="bg-gray-400 text-black px-4 py-2 rounded"
                                 >
@@ -812,7 +706,7 @@ function createCropppedImage(imageSrc, cropPixels) {
                                 aspect={1} // square crop
                                 onCropChange={setCrop}
                                 onZoomChange={setZoom}
-                                onCropComplete={onCrop}
+                                onCropComplete={onCropComplete}
                                 />
                             </div>
 
@@ -852,7 +746,7 @@ function createCropppedImage(imageSrc, cropPixels) {
                     )}
 
                 </div>
-                )}
+                
                 <button className="w-full bg-sky-700 hover:bg-sky-600 text-white p-4 mt-4 rounded uppercase" type="submit">{studentid ? 'Update Student' : 'Submit'}</button>
             </form>
         </div>

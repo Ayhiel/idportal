@@ -50,6 +50,8 @@ export default function AddStudent() {
     
     const navigate = useNavigate();
 
+    const [loadingSubmit, setLoadingSubmit] = useState(false);
+
     const [isSHS, setIsSHS] = useState(false);
 
     // Convert base64 to File
@@ -307,6 +309,7 @@ export default function AddStudent() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoadingSubmit(true);
         try {
         // Check LRN uniqueness
         const { data: existing } = await supabase
@@ -357,6 +360,8 @@ export default function AddStudent() {
         setModalOpen(true);
         setModalTitle("Error!");
         setModalMessage("Failed to save student");
+        } finally {
+            setLoadingSubmit(false);
         }
     };
 
@@ -753,9 +758,9 @@ export default function AddStudent() {
                 <button 
                     className="w-full bg-sky-700 hover:bg-sky-600 text-white p-4 mt-4 rounded uppercase disabled:opacity-50" 
                     type="submit"
-                    disabled={loading}
+                    disabled={loadingSubmit}
                 >
-                    {loading ? (
+                    {loadingSubmit ? (
                         <div className="flex items-center justify-center gap-2">
                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                             <span>{studentid ? 'Updating...' : 'Submitting...'}</span>

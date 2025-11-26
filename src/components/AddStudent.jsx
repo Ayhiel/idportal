@@ -363,7 +363,10 @@ export default function AddStudent() {
     // Handle Closing the modal
     const handleCloseModal = () => {
         setModalOpen(false);
-        if (isSuccess && navigate) navigate("/students");
+        if (isSuccess && studentid && navigate) {
+            navigate("/students");
+        }
+        setIsSuccess(false);
     };
 
 
@@ -747,7 +750,20 @@ export default function AddStudent() {
 
                 </div>
                 
-                <button className="w-full bg-sky-700 hover:bg-sky-600 text-white p-4 mt-4 rounded uppercase" type="submit">{studentid ? 'Update Student' : 'Submit'}</button>
+                <button 
+                    className="w-full bg-sky-700 hover:bg-sky-600 text-white p-4 mt-4 rounded uppercase disabled:opacity-50" 
+                    type="submit"
+                    disabled={loading}
+                >
+                    {loading ? (
+                        <div className="flex items-center justify-center gap-2">
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                            <span>{studentid ? 'Updating...' : 'Submitting...'}</span>
+                        </div>
+                    ) : (
+                        studentid ? 'Update Student' : 'Submit'
+                    )}
+                </button>
             </form>
         </div>
             </>

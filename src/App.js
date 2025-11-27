@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate} from 'react-router-dom';
-import { Cog6ToothIcon, PrinterIcon, UserPlusIcon, UsersIcon, IdentificationIcon} from '@heroicons/react/24/solid';
+import { UserPlusIcon, IdentificationIcon} from '@heroicons/react/24/solid';
 import Modal from 'react-modal';
 import AddStudent from './components/AddStudent';
 import StudentList from './components/StudentList';

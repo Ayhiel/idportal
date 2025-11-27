@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useAuth } from './AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Webcam from 'react-webcam';
 import CustomModal from "./CustomModal";
@@ -7,6 +8,9 @@ import { supabase } from './supabaseClient';
 
 // Function to add data to database
 export default function AddStudent() {
+    // Get the user role
+    const { role } = useAuth();
+
     // Setting up the signup form
     const [form, setForm] = useState({ lrn: '', lastname: '', firstname: '', middlename: '', parent: '', parentnumber: '', brgy: '', town: '', province: '', profile_url: '', gradelevel:'', strand: '' , section: ''});
     
@@ -135,13 +139,12 @@ export default function AddStudent() {
 
         // If cache is fresh (< 24 hours)
         if (age < CACHE_EXPIRY) {
-        console.log("Loaded tbladdress from cache");
         return JSON.parse(cached);
         }
     }
 
     // 2️⃣ No valid cache → fetch from Supabase in batches
-    console.log("Fetching tbladdress from Supabase...");
+
     let allData = [];
     let from = 0;
     const batchSize = 1000;
@@ -168,8 +171,6 @@ export default function AddStudent() {
     // 3️⃣ Save to cache
     localStorage.setItem(CACHE_KEY, JSON.stringify(allData));
     localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
-
-    console.log("Saved tbladdress to cache");
 
     return allData;
     };
@@ -555,6 +556,7 @@ export default function AddStudent() {
                     </select>
                 </div>
                 
+                {role === 'admin' &&
                     <div className="mb-4 flex flex-row items-center gap-2">
                      {/* Preview Image */}
                     <img
@@ -760,6 +762,7 @@ export default function AddStudent() {
                     )}
 
                 </div>
+                }
                 
                 <button 
                     className="w-full bg-sky-700 hover:bg-sky-600 text-white p-4 mt-4 rounded uppercase disabled:opacity-50" 

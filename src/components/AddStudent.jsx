@@ -348,6 +348,11 @@ export default function AddStudent() {
             });
             setPreviewUrl(DEFAULT_PROFILE);
             setProfileFile(null);
+            setUploadedImageUrl(null);
+
+            if(fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
         }
 
         setModalOpen(true);

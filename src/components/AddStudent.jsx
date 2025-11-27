@@ -349,6 +349,7 @@ export default function AddStudent() {
             setPreviewUrl(DEFAULT_PROFILE);
             setProfileFile(null);
             setUploadedImageUrl(null);
+            setShowUploadCrop(false);
 
             if(fileInputRef.current) {
                 fileInputRef.current.value = "";

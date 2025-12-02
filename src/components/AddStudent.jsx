@@ -126,61 +126,68 @@ export default function AddStudent() {
         fetchStudent();
     }, [studentid, DEFAULT_PROFILE]);
 
+
     useEffect(() => {
-    const CACHE_KEY = "tbladdress_cache";
-    const CACHE_TIME_KEY = "tbladdress_cache_time";
-    const CACHE_EXPIRY = 30 * 24 * 60 * 60 * 1000; // 30 days
+  const testJson = async () => {
+    try {
+      const response = await fetch(`${process.env.PUBLIC_URL}/addresses/ph_addresses.json`); // path to your JSON
+      if (!response.ok) throw new Error("Failed to fetch JSON");
 
-    const loadAddresses = async () => {
-        try {
-        const cached = localStorage.getItem(CACHE_KEY);
-        const cachedTime = Number(localStorage.getItem(CACHE_TIME_KEY));
+      const data = await response.json();
+      console.log("JSON loaded successfully:", data);
+    } catch (err) {
+      console.error("Error reading JSON:", err);
+    }
+  };
 
-        // ----- USE CACHE IF STILL VALID -----
-        if (cached && cachedTime && (Date.now() - cachedTime) < CACHE_EXPIRY) {
-            setAddresses(JSON.parse(cached));
-            setLoading(false);
-            return;
-        }
-
-        // ----- FETCH JSON FILE -----
-        const response = await fetch("/addresses/ph_addresses.json");
-        const data = await response.json();
-
-        // ----- CLEAN DATA -----
-        const clean = data
-            .map(a => ({
-            province: a.province?.trim(),
-            town: a.town?.trim(),
-            brgy: a.brgy?.trim()
-            }))
-            .filter(a => a.province && a.town && a.brgy);
-
-        // ----- SAVE TO CACHE -----
-        localStorage.setItem(CACHE_KEY, JSON.stringify(clean));
-        localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
-
-        setAddresses(clean);
-        } catch (err) {
-        console.error("Error loading address JSON:", err);
-        } finally {
-        setLoading(false);
-        }
-    };
-
-    loadAddresses();
-    }, []);
-
-    // Compute unique lists safely
-    const provinces = addresses?.length ? [...new Set(addresses.map(a => a.province))] : [];
-    const towns = addresses?.length
-    ? [...new Set(addresses.filter(a => a.province === form.province).map(a => a.town))]
-    : [];
-    const barangays = addresses?.length
-    ? [...new Set(addresses.filter(a => a.province === form.province && a.town === form.town).map(a => a.brgy))]
-    : [];
+  testJson();
+}, []);
 
 
+useEffect(() => {
+  const loadAddresses = async () => {
+    try {
+      const response = await fetch("/addresses/ph_addresses.json");
+      if (!response.ok) throw new Error("Failed to fetch addresses");
+
+      const data = await response.json();
+
+      const clean = data
+        .map(a => ({
+          province: a.province?.trim(),
+          town: a.town?.trim(),
+          brgy: a.brgy?.trim(),
+        }))
+        .filter(a => a.province && a.town && a.brgy)
+        .sort((a, b) => {
+          if (a.province.localeCompare(b.province) !== 0) return a.province.localeCompare(b.province);
+          if (a.town.localeCompare(b.town) !== 0) return a.town.localeCompare(b.town);
+          return a.brgy.localeCompare(b.brgy);
+        });
+
+      setAddresses(clean);
+    } catch (err) {
+      console.error("Error loading address JSON:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadAddresses();
+}, []);
+
+// Compute unique lists for selects
+const provinces = addresses.length
+  ? [...new Set(addresses.map(a => a.province))]
+  : [];
+
+const towns = addresses.length && form.province
+  ? [...new Set(addresses.filter(a => a.province === form.province).map(a => a.town))]
+  : [];
+
+const brgy = addresses.length && form.province && form.town
+  ? [...new Set(addresses.filter(a => a.province === form.province && a.town === form.town).map(a => a.brgy))]
+  : [];
 
     // Set Capture Resolution
     const videoConstraints = {
@@ -484,48 +491,43 @@ export default function AddStudent() {
                         <p className="text-red-500 text-sm">Mobile number must be 11 digits</p>
                     )}
                 </div>
-                <select
+<select
                     className="w-full mb-4 border border-gray-400 p-2 rounded uppercase"
                     value={form.province}
                     onChange={e => {
-                    updatedField("province", e.target.value);
-                    updatedField("town", "");
-                    updatedField("brgy", "");
+                        updatedField('province', e.target.value);
+   
                     }}
                     required
-                >
-                <option value="">Select Province</option>
-                    {provinces.map(p => (
-                        <option key={p} value={p}>{p}</option>
-                    ))}
+                    >
+                    <option value="">Select Province</option>
+                    {provinces.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
 
                 <select
                     className="w-full mb-4 border border-gray-400 p-2 rounded uppercase"
                     value={form.town}
                     onChange={e => {
-                        updatedField("town", e.target.value);
-                        updatedField("brgy", "");
+                        updatedField('town', e.target.value);
+                        
                     }}
                     required
-                >
+                    >
                     <option value="">Select Town</option>
-                    {towns.map(t => (
-                        <option key={t} value={t}>{t}</option>
-                    ))}
+                    {towns.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
 
                 <select
                     className="w-full mb-4 border border-gray-400 p-2 rounded uppercase"
                     value={form.brgy}
-                    onChange={e => updatedField("brgy", e.target.value)}
+                    onChange={e => updatedField('brgy', e.target.value)}
                     required
-                >
+                    >
                     <option value="">Select Barangay</option>
-                    {barangays.map(b => (
-                        <option key={b} value={b}>{b}</option>
-                    ))}
+                    {brgy.map(b => <option key={b} value={b}>{b}</option>)}
                 </select>
+
+
 
                 <select
                     id="gLevelSelect"

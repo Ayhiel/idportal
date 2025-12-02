@@ -32,7 +32,8 @@ export default function PrintId() {
                 const { data, error } = await supabase
                     .from('tblstudents')
                     .select('*')
-                    .in('id', selectedIds);
+                    .in('id', selectedIds)
+                    .order('lastname', { ascending: true });
 
                 if (error) throw error;
 

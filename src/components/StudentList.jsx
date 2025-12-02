@@ -5,277 +5,276 @@ import CustomModal from "./CustomModal";
 import { useNavigate, useLocation } from "react-router-dom";
 
 export default function StudentList() {
-    const [students, setStudents] = useState([]);
-    const [totalCount, setTotalCount] = useState(0);
-    const [pageIndex, setPageIndex] = useState(0);
-    const studentPerPage = 10;
+  const [students, setStudents] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageIndex, setPageIndex] = useState(0);
+  const studentPerPage = 10;
 
-    const [modalOpen, setModalOpen] = useState(false);
-    const [modalTitle, setModalTitle] = useState("");
-    const [modalMessage, setModalMessage] = useState("");
-    const [showConfirm, setShowConfirm] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
 
-    const [searchTerm, setSearchTerm] = useState('');
-    const [confirmCallback, setConfirmCallback] = useState(() => () => {});
-    const [resultsFound, setResultsFound] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [confirmCallback, setConfirmCallback] = useState(() => () => {});
+  const [resultsFound, setResultsFound] = useState(0);
 
-    const [gradelevel, setGradeLevel] = useState('');
-    const [strand, setStrand] = useState('');
-    const [section, setSection] = useState('');
+  const [gradelevel, setGradeLevel] = useState('');
+  const [strand, setStrand] = useState('');
+  const [section, setSection] = useState('');
 
-    const navigate = useNavigate();
-    const location = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-    const [selectedRows, setSelectedRows] = useState([]);
-    const [selectAllRows, setSelectAllRows] = useState(false);
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [selectAllRows, setSelectAllRows] = useState(false);
 
-    useEffect(() => {
-      const params = new URLSearchParams(location.search);
-      const search = params.get('search') || '';
-      const gradelevel = params.get('gradelevel') || '';
-      const strand = params.get('strand') || '';
-      const section = params.get('section') || '';
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const search = params.get('search') || '';
+    const gradelevel = params.get('gradelevel') || '';
+    const strand = params.get('strand') || '';
+    const section = params.get('section') || '';
 
-      setSearchTerm(search);
-      setGradeLevel(gradelevel);
-      setStrand(strand);
-      setSection(section);
+    setSearchTerm(search);
+    setGradeLevel(gradelevel);
+    setStrand(strand);
+    setSection(section);
 
-      fetchStudents(search, gradelevel, strand, section);
+    fetchStudents(search, gradelevel, strand, section);
 
-    }, [location.search]);
+  }, [location.search]);
 
-    const fetchStudents = async (search = '', gradelevel = '', strand = '', section = '') => {
-      try {
-        let query = supabase
-          .from('tblstudents')
-          .select('*', { count: 'exact' });
+  const fetchStudents = async (search = '', gradelevel = '', strand = '', section = '') => {
+    try {
+      let query = supabase
+        .from('tblstudents')
+        .select('*', { count: 'exact' })
+        .order('date_added', { ascending: false });
 
-        // Apply filters
-        if (search) {
-          query = query.or(`lrn.ilike.%${search}%,firstname.ilike.%${search}%,lastname.ilike.%${search}%,middlename.ilike.%${search}%`);
-        }
-        
-        if (gradelevel) {
-          query = query.eq('gradelevel', gradelevel);
-        }
-        
-        if (strand) {
-          query = query.eq('strand', strand);
-        }
-        
-        if (section) {
-          query = query.eq('section', section);
-        }
-
-        const { data, error, count } = await query;
-
-        if (error) throw error;
-
-        // Get profile picture URLs from storage
-        const studentsWithImages = await Promise.all(
-          data.map(async (student) => {
-            if (student.profile_url) {
-              const { data: urlData } = supabase.storage
-                .from('id-profile')
-                .getPublicUrl(student.profile_url);
-              
-              return {
-                ...student,
-                profileUrl: urlData.publicUrl
-              };
-            }
-            return student;
-          })
-        );
-
-        setStudents(studentsWithImages);
-
-        if (search || gradelevel || strand || section) {
-          setResultsFound(count ?? 0);
-          setTotalCount(null);
-          setPageIndex(0);
-        } else {
-          setTotalCount(count ?? 0);
-          setResultsFound(null);
-        }
-      } catch (err) {
-        console.error('Error fetching students:', err);
+      // Apply filters
+      if (search) {
+        query = query.or(`lrn.ilike.%${search}%,firstname.ilike.%${search}%,lastname.ilike.%${search}%,middlename.ilike.%${search}%`);
       }
-    };
+      
+      if (gradelevel) {
+        query = query.eq('gradelevel', gradelevel);
+      }
+      
+      if (strand) {
+        query = query.eq('strand', strand);
+      }
+      
+      if (section) {
+        query = query.eq('section', section);
+      }
 
-    const currentStudents = useMemo(() => {
-      const start = pageIndex * studentPerPage;
-      const end = start + studentPerPage;
-      return students.slice(start, end);
-    }, [students, pageIndex])
+      const { data, error, count } = await query;
 
-    useEffect(() => {
-      const delayDebounce = setTimeout(() => {
-        handleSearch();
-      }, 300);
+      if (error) throw error;
 
-      return () => clearTimeout(delayDebounce);
-    }, [searchTerm, gradelevel, strand, section]);
-
-
-    const handleEdit = (id) => {
-      localStorage.setItem(
-        'student-filters',
-        JSON.stringify({
-          search: searchTerm,
-          gradelevel,
-          strand,
-          section,
+      // Get profile picture URLs from storage
+      const studentsWithImages = await Promise.all(
+        data.map(async (student) => {
+          if (student.profile_url) {
+            const { data: urlData } = supabase.storage
+              .from('id-profile')
+              .getPublicUrl(student.profile_url);
+            
+            return {
+              ...student,
+              profileUrl: urlData.publicUrl
+            };
+          }
+          return student;
         })
       );
-      navigate(`/signup?id=${id}`);
-    };
 
+      setStudents(studentsWithImages);
 
-    const handleSearch = async() => {
-      fetchStudents(searchTerm, gradelevel, strand, section);
-    }
-
-    const handleDelete = async (id) => {
-  setModalTitle("Delete Confirmation");
-  setModalMessage("Are you sure you want to delete this student?");
-  setShowConfirm(true);
-
-  setConfirmCallback(() => async () => {
-    try {
-      // 1️⃣ Get student's profile URL
-      const { data: student, error: fetchError } = await supabase
-        .from('tblstudents')
-        .select('profile_url')
-        .eq('id', id)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // 2️⃣ Delete profile image from storage if exists
-      if (student?.profile_url) {
-        const url = new URL(student.profile_url);
-        const filePath = url.pathname.replace('/storage/v1/object/public/id-profile/', '');
-
-        if (filePath) {
-          const { error: delError } = await supabase.storage
-            .from('id-profile')
-            .remove([filePath]);
-
-          if (delError) console.error("Failed to delete profile:", delError);
-          else console.log("Profile deleted:", filePath);
-        }
-      }
-
-      // 3️⃣ Delete student record
-      const { error: deleteError } = await supabase
-        .from('tblstudents')
-        .delete()
-        .eq('id', id);
-
-      if (deleteError) throw deleteError;
-
-      setShowConfirm(false);
-      setModalOpen(false);
-      fetchStudents(searchTerm, gradelevel, strand, section);
-
-    } catch (err) {
-      console.error(err);
-      setModalOpen(false);
-      setModalTitle("Error");
-      setModalMessage("Failed to delete student.");
-      setShowConfirm(false);
-      setModalOpen(true);
-    }
-  });
-
-  setModalOpen(true);
-};
-
-
-    useEffect(() => {
-      if (selectedRows.length === students.length && students.length > 0) {
-        setSelectAllRows(true);
+      if (search || gradelevel || strand || section) {
+        setResultsFound(count ?? 0);
+        setTotalCount(null);
+        setPageIndex(0);
       } else {
-        setSelectAllRows(false);
+        setTotalCount(count ?? 0);
+        setResultsFound(null);
       }
-    }, [selectedRows, students]);
+    } catch (err) {
+      console.error('Error fetching students:', err);
+    }
+  };
+
+  const currentStudents = useMemo(() => {
+    const start = pageIndex * studentPerPage;
+    const end = start + studentPerPage;
+    return students.slice(start, end);
+  }, [students, pageIndex])
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      handleSearch();
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchTerm, gradelevel, strand, section]);
 
 
-    const handleFetchSelected = async () => {
-      console.log("Selected IDs:", selectedRows);
+  const handleEdit = (id) => {
+    localStorage.setItem(
+      'student-filters',
+      JSON.stringify({
+        search: searchTerm,
+        gradelevel,
+        strand,
+        section,
+      })
+    );
+    navigate(`/signup?id=${id}`);
+  };
 
-      if (!selectedRows || selectedRows.length === 0) {
-        setModalTitle("Generate ID");
-        setModalMessage("Please select student(s) to continue.");
-        setShowConfirm(false);
-        setModalOpen(true);
-        return;
-      }
+  const handleSearch = async() => {
+    fetchStudents(searchTerm, gradelevel, strand, section);
+  }
 
+  const handleDelete = async (id) => {
+    setModalTitle("Delete Confirmation");
+    setModalMessage("Are you sure you want to delete this student?");
+    setShowConfirm(true);
+
+    setConfirmCallback(() => async () => {
       try {
-        // Fetch selected students from Supabase
-        const { data, error } = await supabase
+        // 1️⃣ Get student's profile URL
+        const { data: student, error: fetchError } = await supabase
           .from('tblstudents')
-          .select('*')
-          .in('id', selectedRows);
+          .select('profile_url')
+          .eq('id', id)
+          .single();
 
-        if (error) throw error;
+        if (fetchError) throw fetchError;
 
-        // Get profile picture URLs
-        const studentsWithImages = await Promise.all(
-          data.map(async (student) => {
-            if (student.profile) {
-              const { data: urlData } = supabase.storage
-                .from('id-profile')
-                .getPublicUrl(student.profile_url);
-              
-              return {
-                ...student,
-                profileUrl: urlData.publicUrl
-              };
-            }
-            return student;
-          })
-        );
+        // 2️⃣ Delete profile image from storage if exists
+        if (student?.profile_url) {
+          const url = new URL(student.profile_url);
+          const filePath = url.pathname.replace('/storage/v1/object/public/id-profile/', '');
 
-        navigate("/students/printid", {
-          state: {
-            ids: selectedRows,
-            students: studentsWithImages
+          if (filePath) {
+            const { error: delError } = await supabase.storage
+              .from('id-profile')
+              .remove([filePath]);
+
+            if (delError) console.error("Failed to delete profile:", delError);
+            else console.log("Profile deleted:", filePath);
           }
-        });
-      } catch (err) {
-        console.error('Error fetching selected students:', err);
-      }
-    };
+        }
 
-    const handleToggleClaimed = async (id, claimed) => {
-      try {
-        const updateData = {
-          claimed,
-          claimed_date: claimed ? new Date().toISOString() : null
-        };
-
-        const { error } = await supabase
+        // 3️⃣ Delete student record
+        const { error: deleteError } = await supabase
           .from('tblstudents')
-          .update(updateData)
+          .delete()
           .eq('id', id);
 
-        if (error) throw error;
+        if (deleteError) throw deleteError;
 
-        // Update local state
-        setStudents(prev =>
-          prev.map(s =>
-            s.id === id ? { ...s, claimed, claimed_date: updateData.claimed_date } : s
-          )
-        );
+        setShowConfirm(false);
+        setModalOpen(false);
+        fetchStudents(searchTerm, gradelevel, strand, section);
+
       } catch (err) {
-        console.error("Failed to update claimed status:", err);
+        console.error(err);
+        setModalOpen(false);
+        setModalTitle("Error");
+        setModalMessage("Failed to delete student.");
+        setShowConfirm(false);
+        setModalOpen(true);
       }
-    };
+    });
 
+    setModalOpen(true);
+  };
+
+
+  useEffect(() => {
+    if (selectedRows.length === students.length && students.length > 0) {
+      setSelectAllRows(true);
+    } else {
+      setSelectAllRows(false);
+    }
+  }, [selectedRows, students]);
+
+
+  const handleFetchSelected = async () => {
+    console.log("Selected IDs:", selectedRows);
+
+    if (!selectedRows || selectedRows.length === 0) {
+      setModalTitle("Generate ID");
+      setModalMessage("Please select student(s) to continue.");
+      setShowConfirm(false);
+      setModalOpen(true);
+      return;
+    }
+
+    try {
+      // Fetch selected students from Supabase
+      const { data, error } = await supabase
+        .from('tblstudents')
+        .select('*')
+        .in('id', selectedRows);
+
+      if (error) throw error;
+
+      // Get profile picture URLs
+      const studentsWithImages = await Promise.all(
+        data.map(async (student) => {
+          if (student.profile) {
+            const { data: urlData } = supabase.storage
+              .from('id-profile')
+              .getPublicUrl(student.profile_url);
+            
+            return {
+              ...student,
+              profileUrl: urlData.publicUrl
+            };
+          }
+          return student;
+        })
+      );
+
+      navigate("/students/printid", {
+        state: {
+          ids: selectedRows,
+          students: studentsWithImages
+        }
+      });
+    } catch (err) {
+      console.error('Error fetching selected students:', err);
+    }
+  };
+
+  const handleToggleClaimed = async (id, claimed) => {
+    try {
+      const updateData = {
+        claimed: claimed ? 1 : 0,
+        date_claimed: claimed ? new Date().toISOString() : null
+      };
+
+      const { error } = await supabase
+        .from('tblstudents')
+        .update(updateData)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Update local state
+      setStudents(prev =>
+        prev.map(s =>
+          s.id === id ? { ...s, claimed, date_claimed: updateData.date_claimed } : s
+        )
+      );
+    } catch (err) {
+      console.error("Failed to update claimed status:", err);
+    }
+  };
 
     return (
       <div className="h-screen px-6 mt-8 overflow-hidden">
@@ -461,55 +460,56 @@ export default function StudentList() {
                         <td className="p-2 text-center">{s.strand}</td>
                         <td className="p-2 text-center">{s.section}</td>
                         <td className="border p-2">
-  <label className="inline-flex items-center gap-2 cursor-pointer">
+                          <label className={`inline-flex items-center gap-2 ${s.claimed ? '' : 'cursor-pointer'}`}>
 
-    <div className="relative flex items-center">
+                            <div className="relative flex items-center">
 
-      {/* Hidden checkbox (peer) */}
-      <input
-        type="checkbox"
-        className="sr-only peer"
-        checked={s.claimed}
-        disabled={s.claimed}
-        onChange={(e) => handleToggleClaimed(s.id, e.target.checked)}
-      />
+                              {/* Hidden checkbox (peer) */}
+                              <input
+                                type="checkbox"
+                                className="sr-only peer"
+                                checked={s.claimed}
+                                disabled={s.claimed}
+                                onChange={(e) => handleToggleClaimed(s.id, e.target.checked)}
+                              />
 
-      {/* Track */}
-      <div className="
-        w-11 h-6 rounded-full transition-colors
-        bg-gray-400 peer-checked:bg-green-500
-      "></div>
+                              {/* Track */}
+                              <div className="
+                                w-11 h-6 rounded-full transition-colors
+                                bg-gray-400 peer-checked:bg-green-500
+                              "></div>
 
-      {/* Knob */}
-      <div className="
-        absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow
-        transition-all
-        peer-checked:translate-x-5
-      "></div>
+                              {/* Knob */}
+                              <div className="
+                                absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow
+                                transition-all
+                                peer-checked:translate-x-5
+                              "></div>
 
-      {/* Checkmark overlay when claimed */}
-      {s.claimed && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <CheckIcon className="w-4 h-4 text-white" />
-        </div>
-      )}
+                              {/* Checkmark overlay when claimed */}
+                              {s.claimed ? (
+                                <div className="absolute inset-0 flex items-center pl-1 pointer-events-none">
+                                  <CheckIcon className="w-4 h-4 text-white" />
+                                </div>
+                              ) : (
+                                ""
+                              )}
 
-    </div>
+                            </div>
 
-    <div className="flex flex-col items-center text-[8pt] font-medium ml-1">
-      {s.claimed ? "Claimed" : "Not Claimed"}
-      {s.claimed && s.claimed_date && (
-        <span className="text-[6pt] text-gray-500">
-          {new Date(s.claimed_date).toLocaleDateString()}
-        </span>
-      )}
-    </div>
+                            <div className="flex flex-col items-center text-[8pt] font-medium ml-1">
+                              {s.claimed ? "Claimed" : "Not Claimed"}
+                              {s.claimed && s.date_claimed ? (
+                                <span className="text-[6pt] text-gray-500">
+                                  {new Date(s.date_claimed).toLocaleDateString()}
+                                </span>
+                              ) : (
+                                ""
+                              )}
+                            </div>
 
-  </label>
-</td>
-
-
-
+                          </label>
+                        </td>
                         <td className="p-2">
                             <div className="flex flex-row gap-2">
                                 <PencilSquareIcon className="cursor-pointer w-8 h-8 text-green-700 mx-auto hover:text-green-900" onClick={() => handleEdit(s.id)} />

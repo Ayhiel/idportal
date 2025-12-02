@@ -111,6 +111,8 @@ export default function AddStudent() {
         if (error) return console.error("Failed to fetch student:", error);
 
         if (data) {
+            const isSenior = data.gradelevel === "g11" || data.gradelevel === "g12";
+            setIsSHS(isSenior);
             setForm({
                 ...data,
                 brgy: data.brgy || "",
@@ -306,169 +308,166 @@ export default function AddStudent() {
         }
     };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoadingSubmit(true);
+    const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoadingSubmit(true);
 
-  try {
-    // Trim current form values
-    const currentLastname = form.lastname?.trim();
-    const currentLRN = form.lrn?.trim();
+    try {
+        // Trim current form values
+        const currentLastname = form.lastname?.trim();
+        const currentLRN = form.lrn?.trim();
 
-    // Check LRN uniqueness
-    const { data: existing } = await supabase
-      .from("tblstudents")
-      .select("id")
-      .eq("lrn", currentLRN)
-      .maybeSingle();
+        // Check LRN uniqueness
+        const { data: existing } = await supabase
+        .from("tblstudents")
+        .select("id")
+        .eq("lrn", currentLRN)
+        .maybeSingle();
 
-    const existingId = existing?.id?.toString();
-    const currentId = studentid?.toString();
+        const existingId = existing?.id?.toString();
+        const currentId = studentid?.toString();
 
-    if (existing && existingId !== currentId) {
-      setModalOpen(true);
-      setModalTitle("Warning!");
-      setModalMessage("The LRN already exists. Please enter a unique LRN.");
-      return;
+        if (existing && existingId !== currentId) {
+        setModalOpen(true);
+        setModalTitle("Warning!");
+        setModalMessage("The LRN already exists. Please enter a unique LRN.");
+        return;
+        }
+
+        let finalProfileUrl = form.profile_url; // Default keep existing
+
+        // Helper: generate unique filename
+        const generateProfileFilename = (lastname, lrn, extension) => {
+        const timestamp = Date.now();
+        return `${lastname?.toUpperCase().replace(/\s+/g, '_')}_${lrn}_${timestamp}.${extension}`;
+        };
+
+        // Helper: get public URL
+        const getPublicUrl = (filename) =>
+        supabase.storage.from('id-profile').getPublicUrl(filename).data.publicUrl;
+
+        // 🔹 Rename old profile if no new upload but LRN or lastname changed
+        if (form.profile_url && !profileFile) {
+        const url = new URL(form.profile_url);
+        const oldFilePath = decodeURIComponent(url.pathname.replace('/storage/v1/object/public/id-profile/', ''));
+        const extension = oldFilePath.split('.').pop();
+        const newFileName = generateProfileFilename(currentLastname, currentLRN, extension);
+
+        // Copy old file to new name
+        const { error: copyError } = await supabase.storage
+            .from('id-profile')
+            .copy(oldFilePath, newFileName);
+        if (copyError) throw copyError;
+
+        // Delete old file after successful copy
+        await deleteOldProfile(form.profile_url);
+
+        // Update final URL
+        finalProfileUrl = getPublicUrl(newFileName);
+        }
+
+        // 🔹 Upload new profile if user selected a new file
+        if (profileFile) {
+        const extension = profileFile.name.split('.').pop();
+        const uniqueName = generateProfileFilename(currentLastname, currentLRN, extension);
+
+        const { error } = await supabase.storage
+            .from('id-profile')
+            .upload(uniqueName, profileFile, { upsert: true });
+        if (error) throw error;
+
+        // Delete old profile if exists
+        if (form.profile_url) await deleteOldProfile(form.profile_url);
+
+        finalProfileUrl = getPublicUrl(uniqueName);
+        }
+
+        const date_added = new Date();
+
+        // 🔹 Update existing student
+        if (studentid) {
+        const { error } = await supabase
+            .from('tblstudents')
+            .update({
+            ...form,
+            lastname: currentLastname,
+            lrn: currentLRN,
+            profile_url: finalProfileUrl,
+            })
+            .eq('id', studentid);
+        if (error) throw error;
+        } 
+        // 🟢 Insert new student
+        else {
+        const { error } = await supabase
+            .from('tblstudents')
+            .insert([{
+            ...form,
+            lastname: currentLastname,
+            lrn: currentLRN,
+            profile_url: finalProfileUrl,
+            date_added,
+            }]);
+        if (error) throw error;
+
+        // Reset form after new insert
+        setForm({
+            lrn: "",
+            lastname: "",
+            firstname: "",
+            middlename: "",
+            parent: "",
+            parentnumber: "",
+            brgy: "",
+            town: "",
+            province: "",
+            gradelevel: "",
+            strand: "",
+            section: "",
+        });
+        setPreviewUrl(DEFAULT_PROFILE);
+        setProfileFile(null);
+        setUploadedImageUrl(null);
+        setShowUploadCrop(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+
+        setModalOpen(true);
+        setModalTitle(studentid ? "Update Student" : "Add Student");
+        setModalMessage(studentid ? "Student updated successfully" : "Student added successfully");
+        setIsSuccess(true);
+
+    } catch (err) {
+        console.error(err);
+        setModalOpen(true);
+        setModalTitle("Error!");
+        setModalMessage("Failed to save student");
+    } finally {
+        setLoadingSubmit(false);
     }
-
-    let finalProfileUrl = form.profile_url; // Default keep existing
-
-    // Helper: generate unique filename
-    const generateProfileFilename = (lastname, lrn, extension) => {
-      const timestamp = Date.now();
-      return `${lastname?.toUpperCase().replace(/\s+/g, '_')}_${lrn}_${timestamp}.${extension}`;
     };
 
-    // Helper: get public URL
-    const getPublicUrl = (filename) =>
-      supabase.storage.from('id-profile').getPublicUrl(filename).data.publicUrl;
 
-    // 🔹 Rename old profile if no new upload but LRN or lastname changed
-    if (form.profile_url && !profileFile) {
-      const url = new URL(form.profile_url);
-      const oldFilePath = decodeURIComponent(url.pathname.replace('/storage/v1/object/public/id-profile/', ''));
-      const extension = oldFilePath.split('.').pop();
-      const newFileName = generateProfileFilename(currentLastname, currentLRN, extension);
+    // Delete old profile from storage
+    const deleteOldProfile = async (profileUrl) => {
+    if (!profileUrl) return;
 
-      // Copy old file to new name
-      const { error: copyError } = await supabase.storage
-        .from('id-profile')
-        .copy(oldFilePath, newFileName);
-      if (copyError) throw copyError;
+    try {
+        const url = new URL(profileUrl);
+        // Extract file path after the bucket name
+        const filePath = url.pathname.replace('/storage/v1/object/public/id-profile/', '');
+        if (!filePath) return;
 
-      // Delete old file after successful copy
-      await deleteOldProfile(form.profile_url);
+        const { error } = await supabase.storage
+        .from("id-profile")
+        .remove([filePath]);
 
-      // Update final URL
-      finalProfileUrl = getPublicUrl(newFileName);
+        if (error) console.error("Failed to delete old profile:", error);
+        
+    } catch (err) {
+        console.error("Error removing profile:", err);
     }
-
-    // 🔹 Upload new profile if user selected a new file
-    if (profileFile) {
-      const extension = profileFile.name.split('.').pop();
-      const uniqueName = generateProfileFilename(currentLastname, currentLRN, extension);
-
-      const { error } = await supabase.storage
-        .from('id-profile')
-        .upload(uniqueName, profileFile, { upsert: true });
-      if (error) throw error;
-
-      // Delete old profile if exists
-      if (form.profile_url) await deleteOldProfile(form.profile_url);
-
-      finalProfileUrl = getPublicUrl(uniqueName);
-    }
-
-    const date_added = new Date();
-
-    // 🔹 Update existing student
-    if (studentid) {
-      const { error } = await supabase
-        .from('tblstudents')
-        .update({
-          ...form,
-          lastname: currentLastname,
-          lrn: currentLRN,
-          profile_url: finalProfileUrl,
-        })
-        .eq('id', studentid);
-      if (error) throw error;
-    } 
-    // 🟢 Insert new student
-    else {
-      const { error } = await supabase
-        .from('tblstudents')
-        .insert([{
-          ...form,
-          lastname: currentLastname,
-          lrn: currentLRN,
-          profile_url: finalProfileUrl,
-          date_added,
-        }]);
-      if (error) throw error;
-
-      // Reset form after new insert
-      setForm({
-        lrn: "",
-        lastname: "",
-        firstname: "",
-        middlename: "",
-        parent: "",
-        parentnumber: "",
-        brgy: "",
-        town: "",
-        province: "",
-        gradelevel: "",
-        strand: "",
-        section: "",
-      });
-      setPreviewUrl(DEFAULT_PROFILE);
-      setProfileFile(null);
-      setUploadedImageUrl(null);
-      setShowUploadCrop(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-
-    setModalOpen(true);
-    setModalTitle(studentid ? "Update Student" : "Add Student");
-    setModalMessage(studentid ? "Student updated successfully" : "Student added successfully");
-    setIsSuccess(true);
-
-  } catch (err) {
-    console.error(err);
-    setModalOpen(true);
-    setModalTitle("Error!");
-    setModalMessage("Failed to save student");
-  } finally {
-    setLoadingSubmit(false);
-  }
-};
-
-
-
-
-
-// Delete old profile from storage
-const deleteOldProfile = async (profileUrl) => {
-  if (!profileUrl) return;
-
-  try {
-    const url = new URL(profileUrl);
-    // Extract file path after the bucket name
-    const filePath = url.pathname.replace('/storage/v1/object/public/id-profile/', '');
-    if (!filePath) return;
-
-    const { error } = await supabase.storage
-      .from("id-profile")
-      .remove([filePath]);
-
-    if (error) console.error("Failed to delete old profile:", error);
-    
-  } catch (err) {
-    console.error("Error removing profile:", err);
-  }
-};
+    };
 
 
     // Handle Closing the modal

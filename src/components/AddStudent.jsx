@@ -126,98 +126,60 @@ export default function AddStudent() {
         fetchStudent();
     }, [studentid, DEFAULT_PROFILE]);
 
-    // Fetch all addresses with caching
-    const fetchAllAddresses = async () => {
+    useEffect(() => {
     const CACHE_KEY = "tbladdress_cache";
     const CACHE_TIME_KEY = "tbladdress_cache_time";
-    const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours (optional)
+    const CACHE_EXPIRY = 30 * 24 * 60 * 60 * 1000; // 30 days
 
-    // Check localStorage first
-    const cached = localStorage.getItem(CACHE_KEY);
-    const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
+    const loadAddresses = async () => {
+        try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        const cachedTime = Number(localStorage.getItem(CACHE_TIME_KEY));
 
-    if (cached && cachedTime) {
-        const age = Date.now() - Number(cachedTime);
-
-        // If cache is fresh (< 24 hours)
-        if (age < CACHE_EXPIRY) {
-        return JSON.parse(cached);
+        // ----- USE CACHE IF STILL VALID -----
+        if (cached && cachedTime && (Date.now() - cachedTime) < CACHE_EXPIRY) {
+            setAddresses(JSON.parse(cached));
+            setLoading(false);
+            return;
         }
-    }
 
-    // No valid cache → fetch from Supabase in batches
+        // ----- FETCH JSON FILE -----
+        const response = await fetch("/addresses/ph_addresses.json");
+        const data = await response.json();
 
-    let allData = [];
-    let from = 0;
-    const batchSize = 1000;
+        // ----- CLEAN DATA -----
+        const clean = data
+            .map(a => ({
+            province: a.province?.trim(),
+            town: a.town?.trim(),
+            brgy: a.brgy?.trim()
+            }))
+            .filter(a => a.province && a.town && a.brgy);
 
-    while (true) {
-        const to = from + batchSize - 1;
+        // ----- SAVE TO CACHE -----
+        localStorage.setItem(CACHE_KEY, JSON.stringify(clean));
+        localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
 
-        const { data, error } = await supabase
-        .from("tbladdress")
-        .select("province, town, brgy")
-        .order("province", { ascending: true })
-        .order("town", { ascending: true })
-        .order("brgy", { ascending: true })
-        .range(from, to);
-
-        if (error) throw error;
-
-        if (!data || data.length === 0) break;
-
-        allData = allData.concat(data);
-        from += batchSize;
-    }
-
-    // Save to cache
-    localStorage.setItem(CACHE_KEY, JSON.stringify(allData));
-    localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
-
-    return allData;
+        setAddresses(clean);
+        } catch (err) {
+        console.error("Error loading address JSON:", err);
+        } finally {
+        setLoading(false);
+        }
     };
 
-    // Load addresses on mount
-    useEffect(() => {
-        const loadAddresses = async () => {
-            try {
-                const data = await fetchAllAddresses();
-
-                const clean = data
-                .map(a => ({
-                    province: a.province?.trim(),
-                    town: a.town?.trim(),
-                    brgy: a.brgy?.trim()
-                }))
-                .filter(a => a.province && a.town && a.brgy);
-
-            setAddresses(clean);
-            } catch (err) {
-                console.error('Error fetching addresses:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
     loadAddresses();
-  }, []);
+    }, []);
 
-  // Build unique lists for selects
-  const provinces = [...new Set(addresses.map(a => a.province))];
-  const towns = [
-    ...new Set(
-      addresses
-        .filter(a => a.province === form.province)
-        .map(a => a.town)
-    )
-  ];
-  const barangays = [
-    ...new Set(
-      addresses
-        .filter(a => a.province === form.province && a.town === form.town)
-        .map(a => a.brgy)
-    )
-  ];
+    // Compute unique lists safely
+    const provinces = addresses?.length ? [...new Set(addresses.map(a => a.province))] : [];
+    const towns = addresses?.length
+    ? [...new Set(addresses.filter(a => a.province === form.province).map(a => a.town))]
+    : [];
+    const barangays = addresses?.length
+    ? [...new Set(addresses.filter(a => a.province === form.province && a.town === form.town).map(a => a.brgy))]
+    : [];
+
 
 
     // Set Capture Resolution
@@ -526,43 +488,45 @@ export default function AddStudent() {
                     className="w-full mb-4 border border-gray-400 p-2 rounded uppercase"
                     value={form.province}
                     onChange={e => {
-                        updatedField('province', e.target.value);
-                        updatedField('town', '');
-                        updatedField('brgy', '');
-   
+                    updatedField("province", e.target.value);
+                    updatedField("town", "");
+                    updatedField("brgy", "");
                     }}
                     required
-                    >
-                    <option value="">Select Province</option>
+                >
+                <option value="">Select Province</option>
                     {provinces.map(p => (
                         <option key={p} value={p}>{p}</option>
                     ))}
-
                 </select>
 
                 <select
                     className="w-full mb-4 border border-gray-400 p-2 rounded uppercase"
                     value={form.town}
                     onChange={e => {
-                        updatedField('town', e.target.value);
-                        updatedField('brgy', '');
-                        
+                        updatedField("town", e.target.value);
+                        updatedField("brgy", "");
                     }}
                     required
-                    >
+                >
                     <option value="">Select Town</option>
-                    {towns.map(t => <option key={t} value={t}>{t}</option>)}
+                    {towns.map(t => (
+                        <option key={t} value={t}>{t}</option>
+                    ))}
                 </select>
 
                 <select
                     className="w-full mb-4 border border-gray-400 p-2 rounded uppercase"
                     value={form.brgy}
-                    onChange={e => updatedField('brgy', e.target.value)}
+                    onChange={e => updatedField("brgy", e.target.value)}
                     required
-                    >
+                >
                     <option value="">Select Barangay</option>
-                    {barangays.map(b => <option key={b} value={b}>{b}</option>)}
+                    {barangays.map(b => (
+                        <option key={b} value={b}>{b}</option>
+                    ))}
                 </select>
+
                 <select
                     id="gLevelSelect"
                     name="gLevelSelect"

@@ -132,7 +132,7 @@ export default function AddStudent() {
     const CACHE_TIME_KEY = "tbladdress_cache_time";
     const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours (optional)
 
-    // 1️⃣ Check localStorage first
+    // Check localStorage first
     const cached = localStorage.getItem(CACHE_KEY);
     const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
 
@@ -145,7 +145,7 @@ export default function AddStudent() {
         }
     }
 
-    // 2️⃣ No valid cache → fetch from Supabase in batches
+    // No valid cache → fetch from Supabase in batches
 
     let allData = [];
     let from = 0;
@@ -170,7 +170,7 @@ export default function AddStudent() {
         from += batchSize;
     }
 
-    // 3️⃣ Save to cache
+    // Save to cache
     localStorage.setItem(CACHE_KEY, JSON.stringify(allData));
     localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
 
@@ -280,34 +280,6 @@ export default function AddStudent() {
         setCroppedAreaPixels(croppedPixels);
     }, []);
 
-
-    // Upload picture to Supabase Storage
-    const uploadProfile = async (file) => {
-        if (!file) return DEFAULT_PROFILE;
-
-        try {
-            const safeFilename = file.name.replace(/[^a-zA-Z0-9_\-.]/g, "_");
-            const filename = `${safeFilename}`;
-
-            const { error } = await supabase.storage
-                .from("id-profile")
-                .upload(filename, file, { contentType: file.type });
-
-            if (error) {
-                console.error("Upload error:", error);
-                return DEFAULT_PROFILE; // Fallback to default
-            }
-
-            const { data: { publicUrl: uploadedUrl } } = supabase.storage
-                .from("id-profile")
-                .getPublicUrl(filename);
-            return uploadedUrl;
-        } catch (err) {
-            console.error("Unexpected error:", err);
-            return DEFAULT_PROFILE;
-        }
-    };
-
     const handleSubmit = async (e) => {
     e.preventDefault();
     setLoadingSubmit(true);
@@ -397,7 +369,7 @@ export default function AddStudent() {
             .eq('id', studentid);
         if (error) throw error;
         } 
-        // 🟢 Insert new student
+        // Insert new student
         else {
         const { error } = await supabase
             .from('tblstudents')
@@ -508,8 +480,8 @@ export default function AddStudent() {
                     <input 
                         type='text'
                         inputMode='numeric'
-                        pattern='[0-9]{12}' // ✅ Ensures 12-digit input on form submission
-                        maxLength={12}    // ✅ Prevents user from typing more than 12 characters
+                        pattern='[0-9]{12}' // Ensures 12-digit input on form submission
+                        maxLength={12}    // Prevents user from typing more than 12 characters
                         className="w-full border border-gray-400 p-2 rounded uppercase" 
                         placeholder="LRN" 
                         value={form.lrn} 
@@ -629,13 +601,13 @@ export default function AddStudent() {
                     >
                         <option value="">Select Strand</option>
                         <option value="ABM">Accountancy, Business, and Management (ABM)</option>
-                        {/* <option value="STEM">Science, Technology, Engineering, and Mathematics (STEM)</option> */}
+                        <option value="STEM">Science, Technology, Engineering, and Mathematics (STEM)</option>
                         <option value="HUMSS">Humanities and Social Sciences (HUMSS)</option>
-                        {/* <option value="GAS">General Academic Strand (GAS)</option> */}
+                        <option value="GAS">General Academic Strand (GAS)</option>
                         <option value="HE">Home Economics (HE)</option>
-                        {/* <option value="AFA">Agri-Fishery Arts (AFA)</option> */}
+                        <option value="AFA">Agri-Fishery Arts (AFA)</option>
                         <option value="ICT">Information and Communication Technology (ICT)</option>
-                        {/* <option value="IA">Industrial Arts (IA)</option> */}
+                        <option value="IA">Industrial Arts (IA)</option>
                     </select>
                     <select
                         value={form.section}

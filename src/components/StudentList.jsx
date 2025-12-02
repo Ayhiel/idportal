@@ -113,7 +113,7 @@ export default function StudentList() {
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
-      handleSearch();
+      fetchStudents(searchTerm, gradelevel, strand, section);
     }, 300);
 
     return () => clearTimeout(delayDebounce);
@@ -132,10 +132,6 @@ export default function StudentList() {
     );
     navigate(`/signup?id=${id}`);
   };
-
-  const handleSearch = async() => {
-    fetchStudents(searchTerm, gradelevel, strand, section);
-  }
 
   const handleDelete = async (id) => {
     setModalTitle("Delete Confirmation");

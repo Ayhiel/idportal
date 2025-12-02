@@ -1,47 +1,53 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import axios from 'axios';
-import html2canvas from "html2canvas";
-import jsPDF from 'jspdf';
+import { supabase } from "./supabaseClient";
 import { BackwardIcon, ForwardIcon } from '@heroicons/react/24/solid';
 import QRCode from 'qrcode';
 
 export default function PrintId() {
-    const API_URL = `${window.location.protocol}//${window.location.hostname}:5000`;
-    
     const location = useLocation();
     const navigate = useNavigate();
 
     const printRef = useRef();
     const [allStudents, setAllStudents] = useState([]);
     const [pageIndex, setPageIndex] = useState(0);
-    const [selectedStrand, setSelectedStrand] = useState('');
     const [qrCodes, setQrCodes] = useState({});
     const studentsPerPage = 5;
 
-    // ✅ get the array of selected IDs from SetPrint
-    const selectedIds = location.state?.ids || [];
+    const selectedIds = useMemo(() => {
+        return location.state?.ids || [];
+    }, [location.state?.ids]);
 
-    // ✅ if no IDs were passed, go back to /setprint
     useEffect(() => {
         if (selectedIds.length === 0) {
-            navigate("/setprint");
+            navigate("/students");
         }
     }, [selectedIds, navigate]);
 
-    // ✅ fetch only the selected students
     useEffect(() => {
         if (selectedIds.length === 0) return;
-        axios.post(`${API_URL}/api/students/bulk`, { ids: selectedIds })
-            .then(res => setAllStudents(res.data))
-            .catch(err => console.error("Failed to fetch selected students", err));
-    }, [API_URL, selectedIds]);
+
+        const fetchSelectedStudents = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('tblstudents')
+                    .select('*')
+                    .in('id', selectedIds);
+
+                if (error) throw error;
+
+                setAllStudents(data || []);
+            } catch (err) {
+                console.error("Failed to fetch selected students", err);
+            }
+        };
+
+        fetchSelectedStudents();
+    }, [selectedIds]);
 
     const filteredStudents = useMemo(() => {
-        return selectedStrand
-            ? allStudents.filter(student => student.strand === selectedStrand)
-            : allStudents;
-    }, [selectedStrand, allStudents]);
+        return allStudents;
+    }, [allStudents]);
 
     const currentStudents = useMemo(() => {
         const start = pageIndex * studentsPerPage;
@@ -54,18 +60,13 @@ export default function PrintId() {
         if (pageIndex >= maxPage && pageIndex > 0) setPageIndex(0);
     }, [filteredStudents, studentsPerPage, pageIndex]);
 
-    useEffect(() => setPageIndex(0), [selectedStrand]);
-
-    // ✅ generate QR codes for only the filtered students
     useEffect(() => {
         let isCancelled = false;
 
         const generateQRCodes = async () => {
-            const newCodes = { ...qrCodes };
-
             for (const student of filteredStudents) {
                 if (isCancelled) break;
-                if (student.lrn && !newCodes[student.lrn]) {
+                if (student.lrn && !qrCodes[student.lrn]) {
                     try {
                         const qr = await QRCode.toDataURL(student.lrn, {
                             color: {
@@ -76,14 +77,13 @@ export default function PrintId() {
                             scale: 8
                         });
 
-                        newCodes[student.lrn] = qr;
                         if (!isCancelled) {
                             setQrCodes(prev => ({ ...prev, [student.lrn]: qr }));
                         }
                     } catch (err) {
                         console.error('QR generation error:', err);
                     }
-                    await new Promise(res => setTimeout(res, 50)); // small delay
+                    await new Promise(res => setTimeout(res, 50));
                 }
             }
         };
@@ -91,20 +91,6 @@ export default function PrintId() {
         generateQRCodes();
         return () => { isCancelled = true; };
     }, [filteredStudents, qrCodes]);
-
-    const handleExportPdf = async () => {
-        const printArea = document.getElementById("print-area");
-        html2canvas(printArea, {
-            useCORS: true,
-            allowTaint: false,
-            scale: 4,
-        }).then((canvas) => {
-            const imgData = canvas.toDataURL("image/png", 1.0);
-            const pdf = new jsPDF("landscape", "mm", "a4");
-            pdf.addImage(imgData, "PNG", 0, 0, 297, 210);
-            pdf.save("id_cards.pdf");
-        });
-    };
 
     const strandMap = {
         ABM: "Accountancy, Business, & Management (ABM)",
@@ -119,13 +105,6 @@ export default function PrintId() {
 
     return (
         <div className="max-h-[100vh] flex flex-col items-center p-4 mt-16">
-            {/* <button
-                onClick={handleExportPdf}
-                className="no-print mb-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
-            >
-                Export as PDF
-            </button> */}
-
            <div className="w-full max-w-[297mm] flex flex-col xl:flex-row lg:items-center lg:gap-4 gap-2 mb-4">
                 <div className="w-full max-w-[297mm] flex flex-row justify-end items-center gap-4">
                     <p className="text-sm text-gray-600">
@@ -183,7 +162,10 @@ export default function PrintId() {
                                 return (
                                     <div
                                         key={`front-${index}`}
-                                        style={{ backgroundImage: `url('${isSHS ? '/images/updatedFront.png' : '/images/jhsfront.png'}')`, width: '54.22mm' }}
+                                        style={{ 
+                                            backgroundImage: `url('${process.env.PUBLIC_URL}/images/${isSHS ? 'updatedFront.png' : 'jhsfront.png'}')`, 
+                                            width: '54.22mm' 
+                                        }}
                                         className="bg-cover bg-center border border-gray-300 p-2 flex flex-col items-center text-xs"
                                     >
                                         <div
@@ -196,24 +178,12 @@ export default function PrintId() {
                                         }}
                                         >
                                         <img
-                                            src={`${API_URL}/${student.profile}`}
+                                            src={student.profile_url}
                                             crossOrigin="anonymous"
                                             alt="Profile"
                                             className="w-full h-full object-cover"
                                         />
                                         </div>
-
-                                        {/* <div className="flex flex-col items-center text-center text-yellow-500 leading-tight mt-[1.5mm] space-y-[2px]">
-                                            <div className="font-extrabold text-lg uppercase leading-tight">
-                                                {student.lastname}
-                                            </div>
-                                            <div className="font-extrabold uppercase">
-                                                {student.firstname} {middleInitial}
-                                            </div>
-                                            <div className="text-white font-bold" style={{ fontSize: '8px' }}>
-                                                LRN: {student.lrn}
-                                            </div>
-                                        </div> */}
 
                                         <div className={`flex flex-col items-center text-center ${isSHS ? 'mt-[1.5mm]' : 'mt-[2.5mm]'}`}>
                                             <div className={`${isSHS ? 'text-yellow-500' : 'text-blue-1000'} font-extrabold text-lg uppercase leading-tight`}>
@@ -257,7 +227,10 @@ export default function PrintId() {
                         {currentStudents.slice(0, 5).map((student, index) => (
                             <div
                                 key={`back-${index}`}
-                                style={{ backgroundImage: "url('/images/updatedBack.png')", width: '54.22mm' }}
+                                style={{ 
+                                    backgroundImage: `url('${process.env.PUBLIC_URL}/images/updatedBack.png')`, 
+                                    width: '54.22mm' 
+                                }}
                                 className="bg-cover bg-center p-2 text-xs relative"
                             >
                                 <div

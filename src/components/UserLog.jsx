@@ -60,7 +60,7 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen flex flex-col justify-center items-center">
             <p className={`${!msg && 'hidden'} text-lg text-red-500 mb-4`}>{msg}</p>
-            <div className='flex flex-col justify-center items-center border border-gray-300 shadow-lg px-6 py-8 rounded-lg max-w-md w-full mx-4'>
+            <div className='flex flex-col justify-center items-center sm:border sm:border-gray-300 sm:shadow-lg px-6 py-8 rounded-lg max-w-md w-full mx-4'>
                 <h2 className="text-2xl font-bold mb-8">Login</h2>
                 <input
                     className="text-xl border border-gray-300 rounded-md p-2 mb-4 w-full"

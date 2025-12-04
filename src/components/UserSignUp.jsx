@@ -127,7 +127,7 @@ export default function SignUpPage() {
             </p>
             <form 
                 onSubmit={handleSignUp}
-                className='flex flex-col justify-start items-center border border-gray-300 shadow-lg px-6 py-8 rounded-lg max-w-md w-full h-full mt-6 mx-4 overflow-y-auto'
+                className='flex flex-col justify-start items-center sm:border sm:border-gray-300 sm:shadow-lg px-6 py-8 rounded-lg max-w-md w-full h-full mt-6 mx-4 overflow-y-auto'
             >
                 <h2 className="text-2xl font-bold mb-6">Sign Up</h2>
                 

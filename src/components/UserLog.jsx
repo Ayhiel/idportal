@@ -5,8 +5,9 @@ import { supabase } from './supabaseClient';
 
 export default function LoginPage() {
     const { login } = useAuth();
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showpass, setShowpass] = useState(false);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const [msg, setMsg] = useState('');
@@ -16,30 +17,30 @@ export default function LoginPage() {
         setMsg('');
 
         try {
-            const { data: userData } = await supabase
-            .from('tbluser')
-            .select('username, password, role, email')
-            .eq('username', username)
-            .maybeSingle();
-
-            if (!userData || userData.password !== password) {
-            setMsg('Invalid username or password.');
-            return;
-            }
-
-            // Sign in with Supabase Auth
-            const { error } = await supabase.auth.signInWithPassword({
-            email: userData.email,
-            password: password,
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: password,
             });
 
             if (error) {
-            setMsg('Invalid username or password.');
-            return;
+                setMsg('Invalid email or password.');
+                return;
             }
 
-            // Login successful
-            login(userData.role);
+            const { data: userData, error: userError } = await supabase
+                .from('tbluser')
+                .select('username, role, email')
+                .eq('auth_id', data.user.id)
+                .single();
+
+            if (userError || !userData) {
+                setMsg('User data not found.');
+                return;
+            }
+
+            // Pass both role and userData
+            login(userData.role, userData);
+
             navigate('/students');
 
         } catch (err) {
@@ -60,25 +61,32 @@ export default function LoginPage() {
         <div className="min-h-screen flex flex-col justify-center items-center">
             <p className={`${!msg && 'hidden'} text-lg text-red-500 mb-4`}>{msg}</p>
             <div className='flex flex-col justify-center items-center border border-gray-300 shadow-lg px-4 py-8 rounded-lg'>
-                <h2 className="text-2xl font-bold mb-12">Admin Login</h2>
+                <h2 className="text-2xl font-bold mb-8">Login</h2>
                 <input
                     className="text-xl border border-gray-300 rounded-md p-2 mb-4"
                     placeholder="Username"
                     type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     onKeyDown={handleKeyPress}
                     disabled={loading}
                 />
-                <input
-                    className="text-xl border p-2 mb-8 border-gray-300 rounded-md"
-                    placeholder="Password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onKeyDown={handleKeyPress}
-                    disabled={loading}
-                />
+                <div className='flex-col mb-6'>
+                    <input
+                        className="text-xl mb-1 border p-2 border-gray-300 rounded-md"
+                        placeholder="Password"
+                        type={showpass ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        onKeyDown={handleKeyPress}
+                        disabled={loading}
+                    />
+                    <div>
+                        <label htmlFor="show-pass" className='cursor-pointer'>
+                            <input id='show-pass' type="checkbox" checked={showpass} onClick={() => setShowpass(!showpass)} /> Show Password
+                        </label>
+                    </div>
+                </div>
                 <div className='w-full flex flex-row gap-2'>
                     <button 
                         className="flex-1 bg-blue-500 text-white px-8 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" 

@@ -127,23 +127,6 @@ export default function AddStudent() {
     }, [studentid, DEFAULT_PROFILE]);
 
 
-    useEffect(() => {
-  const testJson = async () => {
-    try {
-      const response = await fetch(`${process.env.PUBLIC_URL}/addresses/ph_addresses.json`); // path to your JSON
-      if (!response.ok) throw new Error("Failed to fetch JSON");
-
-      const data = await response.json();
-      console.log("JSON loaded successfully:", data);
-    } catch (err) {
-      console.error("Error reading JSON:", err);
-    }
-  };
-
-  testJson();
-}, []);
-
-
 useEffect(() => {
   const loadAddresses = async () => {
     try {
@@ -443,7 +426,7 @@ const brgy = addresses.length && form.province && form.town
         ) : (
             <>
         <div className="shadow-lg rounded-xl max-w-xl mx-auto p-4 mt-8">
-            <h1 className="text-2xl text-center font-bold mt-4">Student Information</h1>
+            <h1 className="text-2xl text-center font-bold mt-4">Student Registration</h1>
             <form onSubmit={handleSubmit} className="w-full mt-8 mb-4">
                 <div className='mb-4'>
                     <input 

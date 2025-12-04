@@ -1,16 +1,34 @@
-import { ArrowLeftEndOnRectangleIcon, IdentificationIcon, PowerIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/solid'; // or any icon you're using
+import { ArrowLeftEndOnRectangleIcon, IdentificationIcon, PowerIcon, Bars3Icon, XMarkIcon, UserPlusIcon } from '@heroicons/react/24/solid'; // or any icon you're using
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import CustomModal from "./CustomModal";
 
 export default function Header() {
 //   const location = useLocation();
 //   const isHome = location.pathname === '/';
 
+    // Opening Custom Modal
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalTitle, setModalTitle] = useState("");
+    const [modalMessage, setModalMessage] = useState("");
+    const [modalAction, setModalAction] = useState(() => () => {});
+    const [showConfirm, setShowConfirm] = useState(false);
+
     const { logout, role, user } = useAuth();
     const isAdmin = role === 'admin';
     const navigate = useNavigate();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    const handleCloseModal = () => setModalOpen(false);
+
+    const handleLogoutClick = () => {
+      setModalTitle("Confirm Logout");
+      setModalMessage("Are you sure you want to log out?");
+      setModalAction(() => logout); // run the actual logout if confirmed
+      setShowConfirm(true);
+      setModalOpen(true);
+    };
 
     return (
   <>
@@ -24,13 +42,13 @@ export default function Header() {
       </div>
 
       {/* Desktop Menu */}
-      <div className='hidden lg:flex items-center gap-4'>
+      <div className='hidden lg:flex items-center gap-6'>
         <h1 className='text-lg font-semibold'>
-          {user?.username ? `Welcome ${user.username}!` : ""}
+          Welcome {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1)  : ""}!
         </h1>
         <button 
-          onClick={isAdmin ? logout : () => navigate('/login')} 
-          className='flex items-center pr-2 gap-1 text-lg'
+          onClick={isAdmin ? handleLogoutClick : () => navigate('/login')} 
+          className='flex items-center gap-2 text-lg text-white hover:text-sky-300 rounded-lg transition-colors'
         >
           {isAdmin ? (
             <>
@@ -40,10 +58,18 @@ export default function Header() {
           ) : (
             <>
               <ArrowLeftEndOnRectangleIcon className='w-5'/>
-              <span>Login as Teacher</span>
+              <span className='text-sm'>Login</span>
             </>
           )}
         </button>
+        {!isAdmin && (
+          <button 
+            onClick={() => { navigate('/userreg'); setIsMenuOpen(false)}}
+            className='flex items-center gap-2 text-lg text-white hover:text-sky-300 rounded-lg transition-colors'>
+            <UserPlusIcon className='w-5'/>
+            <span className='text-sm'>Sign up</span>
+        </button>
+        )}
       </div>
 
       {/* Mobile Hamburger Icon */}
@@ -75,14 +101,27 @@ export default function Header() {
     >
       <div className='flex flex-col pt-16'>
         <h1 className='text-lg font-bold text-white p-8 bg-sky-800'>
-          Welcome {user?.username ? user.username : ""}!
+          Welcome {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1)  : ""}!
         </h1>
         <div className='flex flex-col gap-8 text-white p-8'>
+            {isAdmin && (
+                <>
+                <button 
+                    onClick={() => { navigate('/signup'); setIsMenuOpen(false)}}
+                    className='flex items-center gap-2 text-lg w-full text-white hover:text-sky-600 rounded-lg transition-colors'>
+                    <UserPlusIcon className='w-5'/>
+                    <span className='text-sm'>Add Student</span>
+                </button>
+                <button 
+                    onClick={() => { navigate('/students'); setIsMenuOpen(false)}}
+                    className='flex items-center gap-2 text-lg w-full text-white hover:text-sky-600 rounded-lg transition-colors'>
+                    <IdentificationIcon className='w-5'/>
+                    <span className='text-sm'>View Students</span>
+                </button>
+                </>
+            )}
             <button 
-                onClick={() => {
-                setIsMenuOpen(false);
-                isAdmin ? logout() : navigate('/login');
-                }} 
+                onClick={isAdmin ? handleLogoutClick : () => {navigate('/login'); setIsMenuOpen(false)}}
                 className='flex items-center gap-2 text-lg w-full text-white hover:text-sky-600 rounded-lg transition-colors'
             >
             {isAdmin ? (
@@ -93,20 +132,34 @@ export default function Header() {
             ) : (
                 <>
                 <ArrowLeftEndOnRectangleIcon className='w-5'/>
-                <span className='text-sm'>Login as Teacher</span>
+                <span className='text-sm'>Login</span>
                 </>
             )}
             </button>
-            <div className='flex items-center gap-2 text-lg w-full text-white hover:text-sky-600 rounded-lg transition-colors'>
-                <ArrowLeftEndOnRectangleIcon className='w-5'/>
-                <span className='text-sm'>Link 1</span>
-            </div>
-            <div className='flex items-center gap-2 text-lg w-full text-white hover:text-sky-600 rounded-lg transition-colors'>
-                <ArrowLeftEndOnRectangleIcon className='w-5'/>
-                <span className='text-sm'>Link 2</span>
-            </div>
+ 
+              {!isAdmin && (
+                <button 
+                onClick={() => { navigate('/userreg'); setIsMenuOpen(false)}}
+                className='flex items-center gap-2 text-lg w-full text-white hover:text-sky-600 rounded-lg transition-colors'>
+                <UserPlusIcon className='w-5'/>
+                <span className='text-sm'>Sign up</span>
+            </button>
+              )}
+       
         </div>
       </div>
+        <CustomModal
+            isOpen={modalOpen}
+            onClose={handleCloseModal}
+            title={modalTitle}
+            message={modalMessage}
+            onConfirm={() => {
+              modalAction();
+              handleCloseModal();
+              setIsMenuOpen(false);
+            }}
+            showConfirm={showConfirm}
+        />
     </div>
   </>
 );

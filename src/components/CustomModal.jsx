@@ -1,6 +1,6 @@
 import Modal from 'react-modal';
 
-export default function CustomModal({ isOpen, onClose, onConfirm, title, message, showConfirm = false }) {
+export default function CustomModal({ isOpen, onClose, onConfirm, title, message, showConfirm }) {
   return (
     <Modal
       isOpen={isOpen}

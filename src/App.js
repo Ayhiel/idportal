@@ -9,6 +9,7 @@ import Settings from './components/Settings';
 import Header from './components/Header';
 import { AuthProvider, useAuth } from './components/AuthContext';
 import LoginPage from './components/UserLog';
+import SignUpPage from './components/UserSignUp';
 import NotFound from './components/NotFound';
 
 Modal.setAppElement('#root');
@@ -61,7 +62,7 @@ function AppContent() {
               
                   <SidebarButton
                     icon={<IdentificationIcon className="xl:w-10 w-8 mb-2" />}
-                    label="Print ID"
+                    label="View Students"
                     path="/students"
                     currentPath={currentPath}
                     isActive={
@@ -95,7 +96,8 @@ function AppContent() {
             <Routes>
               <Route path='*' element={<NotFound />} />
               <Route path="/" element={role === 'admin' ? <AddStudent /> : <Navigate to='/signup' />} />
-              <Route path="/login" element={role !== 'admin' ? <LoginPage /> : <Navigate to='/signup' />} />   
+              <Route path="/login" element={role !== 'admin' ? <LoginPage /> : <Navigate to='/signup' />} /> 
+              <Route path="/userreg" element={role !== 'admin' ? <SignUpPage /> : <Navigate to='/signup' />} />   
               <Route path="/signup" element={<AddStudent />} />
               <Route path="/students" element={role === 'admin' ? <StudentList /> : <Navigate to='/login' />} />
               <Route path="/setprint" element={role === 'admin' ? <SetPrint /> : <Navigate to="/login" />} />

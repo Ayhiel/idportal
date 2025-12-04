@@ -474,7 +474,7 @@ const brgy = addresses.length && form.province && form.town
                         <p className="text-red-500 text-sm">Mobile number must be 11 digits</p>
                     )}
                 </div>
-<select
+                <select
                     className="w-full mb-4 border border-gray-400 p-2 rounded uppercase"
                     value={form.province}
                     onChange={e => {

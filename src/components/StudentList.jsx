@@ -404,9 +404,13 @@ useEffect(() => {
                   <th className="p-2">Parent's Number</th>
                   <th className="p-2">Address</th>
                   <th className="p-2">Grade Level</th>
-                  <th className="p-2">Strand</th>
-                  <th className="p-2">Section</th>
-                  <th className="p-2">Status</th>
+                  {(role === 'admin') && (
+                    <>
+                      <th className="p-2">Strand</th>
+                      <th className="p-2">Section</th>
+                      <th className="p-2">Status</th>
+                    </>
+                  )}
                   <th className="p-2">Action</th>
                 </tr>
               </thead>
@@ -454,59 +458,63 @@ useEffect(() => {
                         <td className="p-2">{s.parentnumber}</td>
                         <td className="p-2">BRGY. {s.brgy}, {s.town}, {s.province}</td>
                         <td className="p-2 text-center">{s.gradelevel}</td>
-                        <td className="p-2 text-center">{s.strand}</td>
-                        <td className="p-2 text-center">{s.section}</td>
-                        <td className="border p-2">
-                          <label className={`inline-flex items-center gap-2 ${s.claimed ? '' : 'cursor-pointer'}`}>
+                        {(role === 'admin') && (
+                          <>
+                            <td className="p-2 text-center">{s.strand}</td>
+                            <td className="p-2 text-center">{s.section}</td>
+                            <td className="border p-2">
+                              <label className={`inline-flex items-center gap-2 ${s.claimed ? '' : 'cursor-pointer'}`}>
 
-                            <div className="relative flex items-center">
+                                <div className="relative flex items-center">
 
-                              {/* Hidden checkbox (peer) */}
-                              <input
-                                type="checkbox"
-                                className="sr-only peer"
-                                checked={s.claimed}
-                                disabled={s.claimed}
-                                onChange={(e) => handleToggleClaimed(s.id, e.target.checked)}
-                              />
+                                  {/* Hidden checkbox (peer) */}
+                                  <input
+                                    type="checkbox"
+                                    className="sr-only peer"
+                                    checked={s.claimed}
+                                    disabled={s.claimed}
+                                    onChange={(e) => handleToggleClaimed(s.id, e.target.checked)}
+                                  />
 
-                              {/* Track */}
-                              <div className="
-                                w-11 h-6 rounded-full transition-colors
-                                bg-gray-400 peer-checked:bg-green-500
-                              "></div>
+                                  {/* Track */}
+                                  <div className="
+                                    w-11 h-6 rounded-full transition-colors
+                                    bg-gray-400 peer-checked:bg-green-500
+                                  "></div>
 
-                              {/* Knob */}
-                              <div className="
-                                absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow
-                                transition-all
-                                peer-checked:translate-x-5
-                              "></div>
+                                  {/* Knob */}
+                                  <div className="
+                                    absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow
+                                    transition-all
+                                    peer-checked:translate-x-5
+                                  "></div>
 
-                              {/* Checkmark overlay when claimed */}
-                              {s.claimed ? (
-                                <div className="absolute inset-0 flex items-center pl-1 pointer-events-none">
-                                  <CheckIcon className="w-4 h-4 text-white" />
+                                  {/* Checkmark overlay when claimed */}
+                                  {s.claimed ? (
+                                    <div className="absolute inset-0 flex items-center pl-1 pointer-events-none">
+                                      <CheckIcon className="w-4 h-4 text-white" />
+                                    </div>
+                                  ) : (
+                                    ""
+                                  )}
+
                                 </div>
-                              ) : (
-                                ""
-                              )}
 
-                            </div>
+                                <div className="flex flex-col items-center text-[8pt] font-medium ml-1">
+                                  {s.claimed ? "Claimed" : "Not Claimed"}
+                                  {s.claimed && s.date_claimed ? (
+                                    <span className="text-[6pt] text-gray-500">
+                                      {new Date(s.date_claimed).toLocaleDateString()}
+                                    </span>
+                                  ) : (
+                                    ""
+                                  )}
+                                </div>
 
-                            <div className="flex flex-col items-center text-[8pt] font-medium ml-1">
-                              {s.claimed ? "Claimed" : "Not Claimed"}
-                              {s.claimed && s.date_claimed ? (
-                                <span className="text-[6pt] text-gray-500">
-                                  {new Date(s.date_claimed).toLocaleDateString()}
-                                </span>
-                              ) : (
-                                ""
-                              )}
-                            </div>
-
-                          </label>
-                        </td>
+                              </label>
+                            </td>
+                          </>
+                        )}
                         <td className="p-2">
                             <div className="flex flex-row gap-2">
                                 <PencilSquareIcon className="cursor-pointer w-8 h-8 text-green-700 mx-auto hover:text-green-900" onClick={() => handleEdit(s.id)} />

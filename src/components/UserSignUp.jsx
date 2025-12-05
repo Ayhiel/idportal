@@ -1,12 +1,18 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
+import CustomModal from './CustomModal';
 
 export default function SignUpPage() {
     const navigate = useNavigate();
     const [showpass, setShowpass] = useState(false);
     const [loading, setLoading] = useState(false);
     const [msg, setMsg] = useState('');
+
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalTitle, setModalTitle] = useState("");
+    const [modalMessage, setModalMessage] = useState("");
+    const [isSuccess, setIsSuccess] = useState(false);
 
     // Generate random numbers for CAPTCHA
     const [captchaNum1] = useState(Math.floor(Math.random() * 10) + 1);
@@ -108,9 +114,11 @@ export default function SignUpPage() {
                 return;
             }
 
-            setMsg('Sign up successful! Please check your email to verify your account.');
-            // Optionally redirect after a delay
-            setTimeout(() => navigate('/login'), 3000);
+            setModalTitle("Sign Up Successful");
+setModalMessage("Please check your email to verify your account.");
+setIsSuccess(true);
+setModalOpen(true);
+
 
         } catch (err) {
             console.error(err);
@@ -120,11 +128,18 @@ export default function SignUpPage() {
         }
     };
 
+    const handleCloseModal = () => {
+    setModalOpen(false);
+
+    // Redirect ONLY if success
+    if (isSuccess) {
+        navigate('/login');
+    }
+};
+
     return (
         <div className="max-h-screen flex flex-col justify-center items-center py-8">
-            <p className={`${!msg && 'visible'} text-lg ${msg.includes('successful') ? 'text-green-500' : 'text-red-500'} mt-12 text-center px-4`}>
-                {msg}
-            </p>
+
             <form 
                 onSubmit={handleSignUp}
                 className='flex flex-col justify-start items-center sm:border sm:border-gray-300 sm:shadow-lg px-6 py-8 rounded-lg max-w-md w-full h-full mt-6 mx-4 overflow-y-auto'
@@ -227,6 +242,9 @@ export default function SignUpPage() {
                         
                     />
                 </div>
+                <p className={`${!msg && 'hidden'} text-sm ${msg.includes('successful') ? 'text-green-500' : 'text-red-500'} mb-4`}>
+                    {msg}
+                </p>
 
                 {/* Buttons */}
                 <div className='w-full flex flex-row gap-2'>
@@ -258,6 +276,14 @@ export default function SignUpPage() {
                     Already have an account? <span onClick={() => navigate('/login')} className='text-blue-500 cursor-pointer hover:underline'>Login</span>
                 </p>
             </form>
+            <CustomModal
+    isOpen={modalOpen}
+    onClose={handleCloseModal}
+    title={modalTitle}
+    message={modalMessage}
+    isSuccess={isSuccess}
+/>
+
         </div>
     );
 }

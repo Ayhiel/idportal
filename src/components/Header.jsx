@@ -32,7 +32,6 @@ export default function Header() {
       });
       setShowConfirm(true);
       setModalOpen(true);
-      navigate("/signup");
     };
 
     return (
@@ -154,16 +153,16 @@ export default function Header() {
         </div>
       </div>
         <CustomModal
-            isOpen={modalOpen}
-            onClose={handleCloseModal}
-            title={modalTitle}
-            message={modalMessage}
-            onConfirm={() => {
-              modalAction();
-              handleCloseModal();
-              setIsMenuOpen(false);
-            }}
-            showConfirm={showConfirm}
+          isOpen={modalOpen}
+          onClose={handleCloseModal}
+          title={modalTitle}
+          message={modalMessage}
+          onConfirm={async () => { // Add async here
+            await modalAction(); // Add await here
+            handleCloseModal();
+            setIsMenuOpen(false);
+          }}
+          showConfirm={showConfirm}
         />
     </div>
   </>

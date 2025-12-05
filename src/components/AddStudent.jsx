@@ -454,7 +454,7 @@ const brgy = addresses.length && form.province && form.town
         </div>
         ) : (
             <>
-        <div className="shadow-lg rounded-xl max-w-xl mx-auto p-4 mt-8">
+        <div className="sm:shadow-lg rounded-xl max-w-xl mx-auto p-4 mt-8">
             <h1 className="text-2xl text-center font-bold mt-4">Student Registration</h1>
             <form onSubmit={handleSubmit} className="w-full mt-8 mb-4">
                 <div className='mb-4'>
@@ -608,7 +608,7 @@ const brgy = addresses.length && form.province && form.town
                     className="w-full mb-4 flex-1 p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
                     onChange={(e) => updatedField('adviser', e.target.value)}
                     >
-                    <option value="">{loading ? 'Loading advisers...' : 'Select Adviser'}</option>
+                    <option value="">{loading ? 'Loading advisers...' : 'Adviser'}</option>
                     {advisers
                         .filter(adviser => adviser.id !== 1)
                         .map((adviser) => (

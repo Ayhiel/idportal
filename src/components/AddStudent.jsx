@@ -609,11 +609,14 @@ const brgy = addresses.length && form.province && form.town
                     onChange={(e) => updatedField('adviser', e.target.value)}
                     >
                     <option value="">{loading ? 'Loading advisers...' : 'Select Adviser'}</option>
-                    {advisers.map((adviser) => (
-                        <option key={adviser.id} value={adviser.id} className='uppercase'>
+                    {advisers
+                        .filter(adviser => adviser.id !== 1)
+                        .map((adviser) => (
+                            <option key={adviser.id} value={adviser.id} className='uppercase'>
                             {`${adviser.lastname}, ${adviser.firstname} ${adviser.middlename || ''}`.trim()}
-                        </option>
-                    ))}
+                            </option>
+                        ))
+                    }
                 </select>
                 {(role === 'admin' || role === 'teacher') &&
                     <div className="mb-4 flex flex-row items-center gap-2">

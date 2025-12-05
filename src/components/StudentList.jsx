@@ -274,76 +274,79 @@ useEffect(() => {
           <div className="sticky top-12 z-10 mx-auto bg-white flex flex-col lg:flex-row items-center gap-2 max-w-full">
             <div className="flex flex-col w-full gap-2 lg:flex-row">
               <input className="text-xs lg:text-sm w-full flex-1 border border-gray-400 p-2 rounded" placeholder="Type LRN or name here" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-              <select
-                value={gradelevel}
-                className="w-full flex-1 text-xs lg:text-sm p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                onChange={(e) => setGradeLevel(e.target.value)}
-              >
-                <option value="">by Grade Level</option>
-                <option value="g7">Grade 7</option>
-                <option value="g8">Grade 8</option>
-                <option value="g9">Grade 9</option>
-                <option value="g10">Grade 10</option>
-                <option value="g11">Grade 11</option>
-                <option value="g12">Grade 12</option>
-              </select>
-              <select
-                value={strand}
-                className="w-full flex-1 text-xs lg:text-sm w-full p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                onChange={(e) => setStrand(e.target.value)}
-              >
-                <option value="">by Strand</option>
-                <option value="ABM">Accountancy, Business, and Management (ABM)</option>
-                <option value="STEM">Science, Technology, Engineering, and Mathematics (STEM)</option>
-                <option value="HUMSS">Humanities and Social Sciences (HUMSS)</option>
-                <option value="GAS">General Academic Strand (GAS)</option>
-                <option value="HE">Home Economics (HE)</option>
-                <option value="AFA">Agri-Fishery Arts (AFA)</option>
-                <option value="ICT">Information and Communications Technology (ICT)</option>
-                <option value="IA">Industrial Arts (IA)</option>
-              </select>
-              <select
-                value={section}
-                className="w-full flex-1 text-xs lg:text-sm p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                onChange={(e) => setSection(e.target.value)}
-              >
-                <option value="">by Section</option>
-                <option value="jnc">JNC</option>
-                <option value="dvt">DVT</option>
-                <option value="etb">ETB</option>
-                <option value="rlb">RLB</option>
-                <option value="cpc">CPC</option>
-                <option value="rbp">RBP</option>
-                <option value="aag">AAG</option>
-              </select>
-            </div>
-            <div className="flex lg:w-1/3 w-full gap-2">
-              <button
-                className="text-xs lg:text-sm w-full bg-gray-500 text-white p-3 rounded hover:bg-gray-400"
-                onClick={() => {
-                  setSearchTerm('');
-                  setGradeLevel('');
-                  setStrand('');
-                  setSection('');
-                  localStorage.removeItem('student-filters');
-                  navigate('/students', { replace: true });
-                  fetchStudents();
-                }}
-              >
-                Clear Filter
-              </button>
               {role === 'admin' && (
-                <button
-                  className="hidden lg:block text-xs lg:text-sm w-full bg-sky-900 text-white p-3 rounded hover:bg-sky-700"
-                  onClick={handleFetchSelected}
-              >
-                  Generate ID
-              </button>
+                <>
+                  <select
+                    value={gradelevel}
+                    className="w-full flex-1 text-xs lg:text-sm p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+                    onChange={(e) => setGradeLevel(e.target.value)}
+                  >
+                    <option value="">by Grade Level</option>
+                    <option value="g7">Grade 7</option>
+                    <option value="g8">Grade 8</option>
+                    <option value="g9">Grade 9</option>
+                    <option value="g10">Grade 10</option>
+                    <option value="g11">Grade 11</option>
+                    <option value="g12">Grade 12</option>
+                  </select>
+                  <select
+                    value={strand}
+                    className="w-full flex-1 text-xs lg:text-sm w-full p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+                    onChange={(e) => setStrand(e.target.value)}
+                  >
+                    <option value="">by Strand</option>
+                    <option value="ABM">Accountancy, Business, and Management (ABM)</option>
+                    <option value="STEM">Science, Technology, Engineering, and Mathematics (STEM)</option>
+                    <option value="HUMSS">Humanities and Social Sciences (HUMSS)</option>
+                    <option value="GAS">General Academic Strand (GAS)</option>
+                    <option value="HE">Home Economics (HE)</option>
+                    <option value="AFA">Agri-Fishery Arts (AFA)</option>
+                    <option value="ICT">Information and Communications Technology (ICT)</option>
+                    <option value="IA">Industrial Arts (IA)</option>
+                  </select>
+                  <select
+                    value={section}
+                    className="w-full flex-1 text-xs lg:text-sm p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+                    onChange={(e) => setSection(e.target.value)}
+                  >
+                    <option value="">by Section</option>
+                    <option value="jnc">JNC</option>
+                    <option value="dvt">DVT</option>
+                    <option value="etb">ETB</option>
+                    <option value="rlb">RLB</option>
+                    <option value="cpc">CPC</option>
+                    <option value="rbp">RBP</option>
+                    <option value="aag">AAG</option>
+                  </select>
+                </>
               )}
             </div>
-
+            {role === 'admin' && (
+              <div className="flex lg:w-1/3 w-full gap-2">
+                <button
+                  className="text-xs lg:text-sm w-full bg-gray-500 text-white p-3 rounded hover:bg-gray-400"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setGradeLevel('');
+                    setStrand('');
+                    setSection('');
+                    localStorage.removeItem('student-filters');
+                    navigate('/students', { replace: true });
+                    fetchStudents();
+                  }}
+                >
+                  Clear Filter
+                </button>
+                <button
+                    className="hidden lg:block text-xs lg:text-sm w-full bg-sky-900 text-white p-3 rounded hover:bg-sky-700"
+                    onClick={handleFetchSelected}
+                >
+                    Generate ID
+                </button>
+              </div>
+            )}
           </div>
-      
+    
         <div className="max-w-full mx-auto mt-16 rounded-lg border border-gray-400 p-2">
           <h2 className="text-xl lg:text-2xl font-bold text-center mt-2">Student List</h2>
           <div className="flex justify-between items-center mb-2">

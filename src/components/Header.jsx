@@ -26,9 +26,13 @@ export default function Header() {
     const handleLogoutClick = () => {
       setModalTitle("Confirm Logout");
       setModalMessage("Are you sure you want to log out?");
-      setModalAction(() => logout); // run the actual logout if confirmed
+      setModalAction(() => async () => {
+        await logout();
+        navigate("/signup");
+      });
       setShowConfirm(true);
       setModalOpen(true);
+      navigate("/signup");
     };
 
     return (
@@ -48,7 +52,7 @@ export default function Header() {
           Welcome {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1)  : ""}!
         </h1>
         <button 
-          onClick={(isAdmin || isTeacher) ? handleLogoutClick : () => navigate('/signup')} 
+          onClick={(isAdmin || isTeacher) ? handleLogoutClick : () => navigate('/login')} 
           className='flex items-center gap-2 text-lg text-white hover:text-sky-300 rounded-lg transition-colors'
         >
           {isAdmin || isTeacher ? (
@@ -122,7 +126,7 @@ export default function Header() {
                 </>
             )}
             <button 
-                onClick={(isAdmin || isTeacher) ? handleLogoutClick : () => {navigate('/signup'); setIsMenuOpen(false)}}
+                onClick={(isAdmin || isTeacher) ? handleLogoutClick : () => {navigate('/login'); setIsMenuOpen(false)}}
                 className='flex items-center gap-2 text-lg w-full text-white hover:text-sky-600 rounded-lg transition-colors'
             >
             {isAdmin || isTeacher ? (

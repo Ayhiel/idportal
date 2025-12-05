@@ -3,6 +3,7 @@ import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import CustomModal from "./CustomModal";
+import PassCodeModal from './PassCodeModal';
 
 export default function Header() {
 //   const location = useLocation();
@@ -14,6 +15,7 @@ export default function Header() {
     const [modalMessage, setModalMessage] = useState("");
     const [modalAction, setModalAction] = useState(() => () => {});
     const [showConfirm, setShowConfirm] = useState(false);
+    const [showModal, setShowModal] = useState(false);
 
     const { logout, role, user } = useAuth();
     const isAdmin = role === 'admin';
@@ -33,6 +35,22 @@ export default function Header() {
       setShowConfirm(true);
       setModalOpen(true);
     };
+
+    const CORRECT_PASSCODE = '1234'; // Set your passcode here
+
+  const handlePasscodeConfirm = (passcode) => {
+    if (passcode === CORRECT_PASSCODE) {
+      setShowModal(false);
+      sessionStorage.setItem('passcodeVerified', 'true');
+      navigate('/userreg'); // Redirect to signup page
+      return true; // Important: return true for success
+    }
+    return false; // Important: return false for error
+  };
+
+  window.addEventListener('beforeunload', () => {
+  sessionStorage.removeItem('passcodeVerified');
+});
 
     return (
   <>
@@ -68,7 +86,7 @@ export default function Header() {
         </button>
         {(!isAdmin && !isTeacher) && (
           <button 
-            onClick={() => { navigate('/userreg'); setIsMenuOpen(false)}}
+            onClick={() => { setShowModal(true); setIsMenuOpen(false)}}
             className='flex items-center gap-2 text-lg text-white hover:text-sky-300 rounded-lg transition-colors'>
             <UserPlusIcon className='w-5'/>
             <span className='text-sm'>Sign up</span>
@@ -143,7 +161,7 @@ export default function Header() {
  
             {(!isAdmin && !isTeacher) && (
               <button 
-                onClick={() => { navigate('/userreg'); setIsMenuOpen(false)}}
+                onClick={() => { setShowModal(true); setIsMenuOpen(false)}}
                 className='flex items-center gap-2 text-lg w-full text-white hover:text-sky-600 rounded-lg transition-colors'>
                 <UserPlusIcon className='w-5'/>
                 <span className='text-sm'>Sign up</span>
@@ -164,6 +182,14 @@ export default function Header() {
           }}
           showConfirm={showConfirm}
         />
+        <PassCodeModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onConfirm={handlePasscodeConfirm}
+        title="Enter Passcode"
+        message="Please enter the passcode to access signup"
+        showConfirm={true}
+      />
     </div>
   </>
 );

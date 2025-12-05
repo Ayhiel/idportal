@@ -98,7 +98,7 @@ function AppContent() {
               <Route path='*' element={<NotFound />} />
               <Route path="/" element={role === 'admin' ? <AddStudent /> : <Navigate to='/signup' />} />
               <Route path="/login" element={role !== 'admin' ? <LoginPage /> : <Navigate to='/signup' />} /> 
-              <Route path="/userreg" element={role !== 'admin' ? <SignUpPage /> : <Navigate to='/signup' />} />   
+              <Route path="/userreg" element={role !== 'admin' ? (sessionStorage.getItem('passcodeVerified') === 'true' ? (<SignUpPage />) : (<Navigate to="/" replace />)) : (<Navigate to='/signup' replace />)} />
               <Route path="/signup" element={<AddStudent />} />
               <Route path="/students" element={role === 'admin' || role === 'teacher' ? <StudentList /> : <Navigate to='/login' />} />
               <Route path="/setprint" element={role === 'admin' ? <SetPrint /> : <Navigate to="/login" />} />

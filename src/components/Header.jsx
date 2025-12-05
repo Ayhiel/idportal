@@ -183,13 +183,13 @@ export default function Header() {
           showConfirm={showConfirm}
         />
         <PassCodeModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        onConfirm={handlePasscodeConfirm}
-        title="Enter Passcode"
-        message="Please enter the passcode to access signup"
-        showConfirm={true}
-      />
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          onConfirm={handlePasscodeConfirm}
+          title="Enter Passcode"
+          message="Please enter the passcode to access signup"
+          showConfirm={true}
+        />
     </div>
   </>
 );

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
+import PassCodeModal from './PassCodeModal';
 
 export default function LoginPage() {
     const { login } = useAuth();
@@ -11,6 +12,8 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const [msg, setMsg] = useState('');
+
+    const [showModal, setShowModal] = useState(false);
 
     const handleLogin = async () => {
         setLoading(true);
@@ -56,6 +59,22 @@ export default function LoginPage() {
             handleLogin();
         }
     };
+
+        const CORRECT_PASSCODE = '301304'; // Set your passcode here
+
+    const handlePasscodeConfirm = (passcode) => {
+        if (passcode === CORRECT_PASSCODE) {
+        setShowModal(false);
+        sessionStorage.setItem('passcodeVerified', 'true');
+        navigate('/userreg'); // Redirect to signup page
+        return true; // Important: return true for success
+        }
+        return false; // Important: return false for error
+    };
+
+    window.addEventListener('beforeunload', () => {
+    sessionStorage.removeItem('passcodeVerified');
+    });
 
     return (
         <div className="min-h-screen flex flex-col justify-center items-center">
@@ -112,9 +131,17 @@ export default function LoginPage() {
                 </div>
                 {/* Login Link */}
                 <p className='mt-4 text-sm'>
-                    Don't have an account? <span onClick={() => navigate('/userreg')} className='text-blue-500 cursor-pointer hover:underline'>Sign up</span>
+                    Don't have an account? <span onClick={() => setShowModal(true)} className='text-blue-500 cursor-pointer hover:underline'>Sign up</span>
                 </p>
             </div>
+            <PassCodeModal
+                isOpen={showModal}
+                onClose={() => setShowModal(false)}
+                onConfirm={handlePasscodeConfirm}
+                title="Enter Passcode"
+                message="Please enter the passcode to access signup"
+                showConfirm={true}
+            />
         </div>
     );
 }

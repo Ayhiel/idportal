@@ -36,7 +36,7 @@ export default function Header() {
       setModalOpen(true);
     };
 
-    const CORRECT_PASSCODE = '1234'; // Set your passcode here
+    const CORRECT_PASSCODE = '301304'; // Set your passcode here
 
   const handlePasscodeConfirm = (passcode) => {
     if (passcode === CORRECT_PASSCODE) {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 import CustomModal from './CustomModal';
@@ -115,9 +115,9 @@ export default function SignUpPage() {
             }
 
             setModalTitle("Sign Up Successful");
-setModalMessage("Please check your email to verify your account.");
-setIsSuccess(true);
-setModalOpen(true);
+            setModalMessage("Please check your email to verify your account.");
+            setIsSuccess(true);
+            setModalOpen(true);
 
 
         } catch (err) {
@@ -129,13 +129,20 @@ setModalOpen(true);
     };
 
     const handleCloseModal = () => {
-    setModalOpen(false);
+        setModalOpen(false);
 
-    // Redirect ONLY if success
-    if (isSuccess) {
-        navigate('/login');
-    }
-};
+        // Redirect ONLY if success
+        if (isSuccess) {
+            navigate('/login');
+        }
+    };
+
+    useEffect(() => {
+        // Clear passcode verification when leaving the signup page
+        return () => {
+        sessionStorage.removeItem('passcodeVerified');
+        };
+    }, []);
 
     return (
         <div className="max-h-screen flex flex-col justify-center items-center py-8">

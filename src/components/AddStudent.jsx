@@ -12,7 +12,7 @@ export default function AddStudent() {
     const { role } = useAuth();
 
     // Setting up the signup form
-    const [form, setForm] = useState({ lrn: '', lastname: '', firstname: '', middlename: '', parent: '', parentnumber: '', brgy: '', town: '', province: '', profile_url: '', gradelevel:'', strand: '' , section: ''});
+    const [form, setForm] = useState({ lrn: '', lastname: '', firstname: '', middlename: '', parent: '', parentnumber: '', brgy: '', town: '', province: '', profile_url: '', gradelevel:'', strand: '' , section: '', adviser: ''});
     
     // Setting up profile file
     const { data: { publicUrl } } = supabase
@@ -25,6 +25,8 @@ export default function AddStudent() {
     const [profileFile, setProfileFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(DEFAULT_PROFILE);
     const [uploadedImageUrl, setUploadedImageUrl] = useState('');
+
+    const [advisers, setAdvisers] = useState([]);
 
     // Opening Custom Modal
     const [modalOpen, setModalOpen] = useState(false);
@@ -95,6 +97,32 @@ export default function AddStudent() {
         image.onerror = reject;
         image.src = imageSrc;
         });
+    };
+
+        // Fetch advisers on component mount
+    useEffect(() => {
+        fetchAdvisers();
+    }, []);
+
+    const fetchAdvisers = async () => {
+        setLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('tbluser')
+                .select('id, firstname, lastname, middlename, email')
+                .order('lastname', { ascending: true }); // Sort by lastname
+
+            if (error) {
+                console.error('Error fetching advisers:', error);
+                return;
+            }
+
+            setAdvisers(data || []);
+        } catch (err) {
+            console.error('Error:', err);
+        } finally {
+            setLoading(false);
+        }
     };
 
     // Fetch all students during editing
@@ -331,7 +359,7 @@ const brgy = addresses.length && form.province && form.town
             lrn: currentLRN,
             profile_url: finalProfileUrl,
             date_added,
-            }]);
+        }]);
         if (error) throw error;
 
         // Reset form after new insert
@@ -348,6 +376,7 @@ const brgy = addresses.length && form.province && form.town
             gradelevel: "",
             strand: "",
             section: "",
+            adviser: "",
         });
         setPreviewUrl(DEFAULT_PROFILE);
         setProfileFile(null);
@@ -574,8 +603,19 @@ const brgy = addresses.length && form.province && form.town
                         <option value="aag">AAG</option>
                     </select>
                 </div>
-                
-                {role === 'admin' &&
+                <select
+                    value={form.adviser}
+                    className="w-full mb-4 flex-1 p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+                    onChange={(e) => updatedField('adviser', e.target.value)}
+                    >
+                    <option value="">{loading ? 'Loading advisers...' : 'Select Adviser'}</option>
+                    {advisers.map((adviser) => (
+                        <option key={adviser.id} value={adviser.id} className='uppercase'>
+                            {`${adviser.lastname}, ${adviser.firstname} ${adviser.middlename || ''}`.trim()}
+                        </option>
+                    ))}
+                </select>
+                {(role === 'admin' || role === 'teacher') &&
                     <div className="mb-4 flex flex-row items-center gap-2">
                      {/* Preview Image */}
                     <img

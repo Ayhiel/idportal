@@ -3,8 +3,11 @@ import { supabase } from "./supabaseClient";
 import { BackwardIcon, CheckIcon, ForwardIcon, PencilSquareIcon, TrashIcon, UserCircleIcon} from '@heroicons/react/24/solid';
 import CustomModal from "./CustomModal";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from './AuthContext';
 
 export default function StudentList() {
+  const { user, role } = useAuth();
+
   const [students, setStudents] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [pageIndex, setPageIndex] = useState(0);
@@ -29,96 +32,89 @@ export default function StudentList() {
   const [selectedRows, setSelectedRows] = useState([]);
   const [selectAllRows, setSelectAllRows] = useState(false);
 
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const search = params.get('search') || '';
-    const gradelevel = params.get('gradelevel') || '';
-    const strand = params.get('strand') || '';
-    const section = params.get('section') || '';
 
-    setSearchTerm(search);
-    setGradeLevel(gradelevel);
-    setStrand(strand);
-    setSection(section);
+const fetchStudents = async (search = '', gradelevel = '', strand = '', section = '') => {
+  if (!user?.id) {
+    console.warn('No user logged in yet.');
+    return;
+  }
 
-    fetchStudents(search, gradelevel, strand, section);
+  try {
+    let query = supabase
+      .from('tblstudents')
+      .select('*', { count: 'exact' })
+      .order('date_added', { ascending: false });
 
-  }, [location.search]);
+    if (user.id !== 1) query = query.eq('adviser', user.id);
 
-  const fetchStudents = async (search = '', gradelevel = '', strand = '', section = '') => {
-    try {
-      let query = supabase
-        .from('tblstudents')
-        .select('*', { count: 'exact' })
-        .order('date_added', { ascending: false });
+    if (search) query = query.or(
+      `lrn.ilike.%${search}%,firstname.ilike.%${search}%,lastname.ilike.%${search}%,middlename.ilike.%${search}%`
+    );
+    if (gradelevel) query = query.eq('gradelevel', gradelevel);
+    if (strand) query = query.eq('strand', strand);
+    if (section) query = query.eq('section', section);
 
-      // Apply filters
-      if (search) {
-        query = query.or(`lrn.ilike.%${search}%,firstname.ilike.%${search}%,lastname.ilike.%${search}%,middlename.ilike.%${search}%`);
-      }
-      
-      if (gradelevel) {
-        query = query.eq('gradelevel', gradelevel);
-      }
-      
-      if (strand) {
-        query = query.eq('strand', strand);
-      }
-      
-      if (section) {
-        query = query.eq('section', section);
-      }
+    const { data, error, count } = await query;
+    if (error) throw error;
 
-      const { data, error, count } = await query;
+    const studentsWithImages = await Promise.all(
+      data.map(async student => {
+        if (student.profile_url) {
+          const { data: urlData } = supabase.storage.from('id-profile').getPublicUrl(student.profile_url);
+          return { ...student, profileUrl: urlData.publicUrl };
+        }
+        return student;
+      })
+    );
 
-      if (error) throw error;
+    setStudents(studentsWithImages);
+    setResultsFound(search || gradelevel || strand || section ? count : null);
+    setTotalCount(search || gradelevel || strand || section ? null : count);
 
-      // Get profile picture URLs from storage
-      const studentsWithImages = await Promise.all(
-        data.map(async (student) => {
-          if (student.profile_url) {
-            const { data: urlData } = supabase.storage
-              .from('id-profile')
-              .getPublicUrl(student.profile_url);
-            
-            return {
-              ...student,
-              profileUrl: urlData.publicUrl
-            };
-          }
-          return student;
-        })
-      );
+  } catch (err) {
+    console.error('Error fetching students:', err);
+  }
+};
 
-      setStudents(studentsWithImages);
 
-      if (search || gradelevel || strand || section) {
-        setResultsFound(count ?? 0);
-        setTotalCount(null);
-        setPageIndex(0);
-      } else {
-        setTotalCount(count ?? 0);
-        setResultsFound(null);
-      }
-    } catch (err) {
-      console.error('Error fetching students:', err);
-    }
-  };
+useEffect(() => {
+  if (!user) return; // wait until user is ready
+
+  // Fetch from URL params
+  const params = new URLSearchParams(location.search);
+  const search = params.get('search') || '';
+  const grade = params.get('gradelevel') || '';
+  const str = params.get('strand') || '';
+  const sec = params.get('section') || '';
+
+  setSearchTerm(search);
+  setGradeLevel(grade);
+  setStrand(str);
+  setSection(sec);
+
+  // Fetch students immediately
+  fetchStudents(search, grade, str, sec);
+
+}, [location.search, user]);
+
+
+useEffect(() => {
+  if (!user) return; // <-- important!
+
+  const delayDebounce = setTimeout(() => {
+    fetchStudents(searchTerm, gradelevel, strand, section);
+  }, 300);
+
+  return () => clearTimeout(delayDebounce);
+}, [searchTerm, gradelevel, strand, section, user]); // add `user` as dependency
+
+
 
   const currentStudents = useMemo(() => {
     const start = pageIndex * studentPerPage;
     const end = start + studentPerPage;
     return students.slice(start, end);
   }, [students, pageIndex])
-
-  useEffect(() => {
-    const delayDebounce = setTimeout(() => {
-      fetchStudents(searchTerm, gradelevel, strand, section);
-    }, 300);
-
-    return () => clearTimeout(delayDebounce);
-  }, [searchTerm, gradelevel, strand, section]);
-
 
   const handleEdit = (id) => {
     localStorage.setItem(
@@ -336,12 +332,14 @@ export default function StudentList() {
               >
                 Clear Filter
               </button>
-              <button
+              {role === 'admin' && (
+                <button
                   className="hidden lg:block text-xs lg:text-sm w-full bg-sky-900 text-white p-3 rounded hover:bg-sky-700"
                   onClick={handleFetchSelected}
               >
                   Generate ID
               </button>
+              )}
             </div>
 
           </div>

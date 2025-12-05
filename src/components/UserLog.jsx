@@ -29,7 +29,7 @@ export default function LoginPage() {
 
             const { data: userData, error: userError } = await supabase
                 .from('tbluser')
-                .select('username, role, email')
+                .select('id, username, role, email')
                 .eq('auth_id', data.user.id)
                 .single();
 

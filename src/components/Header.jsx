@@ -17,6 +17,7 @@ export default function Header() {
 
     const { logout, role, user } = useAuth();
     const isAdmin = role === 'admin';
+    const isTeacher = role === 'teacher';
     const navigate = useNavigate();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -47,10 +48,10 @@ export default function Header() {
           Welcome {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1)  : ""}!
         </h1>
         <button 
-          onClick={isAdmin ? handleLogoutClick : () => navigate('/login')} 
+          onClick={(isAdmin || isTeacher) ? handleLogoutClick : () => navigate('/login')} 
           className='flex items-center gap-2 text-lg text-white hover:text-sky-300 rounded-lg transition-colors'
         >
-          {isAdmin ? (
+          {isAdmin || isTeacher ? (
             <>
               <PowerIcon className='w-5'/>
               <span className='text-sm'>Logout</span>
@@ -62,7 +63,7 @@ export default function Header() {
             </>
           )}
         </button>
-        {!isAdmin && (
+        {(!isAdmin && !isTeacher) && (
           <button 
             onClick={() => { navigate('/userreg'); setIsMenuOpen(false)}}
             className='flex items-center gap-2 text-lg text-white hover:text-sky-300 rounded-lg transition-colors'>
@@ -104,7 +105,7 @@ export default function Header() {
           Welcome {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1)  : ""}!
         </h1>
         <div className='flex flex-col gap-8 text-white p-8'>
-            {isAdmin && (
+            {(isAdmin || isTeacher) && (
                 <>
                 <button 
                     onClick={() => { navigate('/signup'); setIsMenuOpen(false)}}
@@ -121,10 +122,10 @@ export default function Header() {
                 </>
             )}
             <button 
-                onClick={isAdmin ? handleLogoutClick : () => {navigate('/login'); setIsMenuOpen(false)}}
+                onClick={(isAdmin || isTeacher) ? handleLogoutClick : () => {navigate('/login'); setIsMenuOpen(false)}}
                 className='flex items-center gap-2 text-lg w-full text-white hover:text-sky-600 rounded-lg transition-colors'
             >
-            {isAdmin ? (
+            {isAdmin || isTeacher ? (
                 <>
                 <PowerIcon className='w-5'/>
                 <span className='text-sm'>Logout</span>
@@ -137,15 +138,15 @@ export default function Header() {
             )}
             </button>
  
-              {!isAdmin && (
-                <button 
+            {(!isAdmin && !isTeacher) && (
+              <button 
                 onClick={() => { navigate('/userreg'); setIsMenuOpen(false)}}
                 className='flex items-center gap-2 text-lg w-full text-white hover:text-sky-600 rounded-lg transition-colors'>
                 <UserPlusIcon className='w-5'/>
                 <span className='text-sm'>Sign up</span>
-            </button>
-              )}
-       
+              </button>
+            )}
+    
         </div>
       </div>
         <CustomModal

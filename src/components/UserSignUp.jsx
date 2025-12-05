@@ -96,11 +96,11 @@ export default function SignUpPage() {
                 .insert([{
                     auth_id: authData.user.id,
                     email: data.email,
-                    firstname: data.firstname,
-                    lastname: data.lastname,
-                    middlename: data.middlename,
+                    firstname: data.firstname.trim().toUpperCase(),
+                    lastname: data.lastname.trim().toUpperCase(),
+                    middlename: data.middlename.trim().toUpperCase(),
                     username: data.username,
-                    role: 'admin' // default role
+                    role: 'teacher' // default role
                 }]);
 
             if (insertError) {

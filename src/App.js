@@ -17,7 +17,7 @@ Modal.setAppElement('#root');
 // ✅ Reusable sidebar button component
 function SidebarButton({ icon, label, path, currentPath, navigate, isActive }) {
   const active = isActive ?? (currentPath === path);
-
+  
   return (
     <div
       onClick={() => navigate(path)}
@@ -40,6 +40,7 @@ function AppContent() {
 
   const { role } = useAuth();
   const isAdmin = role === 'admin';
+  const isTeacher = role === 'teacher';
 
   return (
     <div className="min-h-screen">
@@ -47,7 +48,7 @@ function AppContent() {
       <Header />
 
       <div className="flex h-screen z-0">
-        {isAdmin && (
+        {(isAdmin || isTeacher) && (
           <div className="hidden lg:flex flex-col pt-20 h-screen bg-sky-800">
             
             <div className="space-y-4 pl-4">
@@ -99,7 +100,7 @@ function AppContent() {
               <Route path="/login" element={role !== 'admin' ? <LoginPage /> : <Navigate to='/signup' />} /> 
               <Route path="/userreg" element={role !== 'admin' ? <SignUpPage /> : <Navigate to='/signup' />} />   
               <Route path="/signup" element={<AddStudent />} />
-              <Route path="/students" element={role === 'admin' ? <StudentList /> : <Navigate to='/login' />} />
+              <Route path="/students" element={role === 'admin' || role === 'teacher' ? <StudentList /> : <Navigate to='/login' />} />
               <Route path="/setprint" element={role === 'admin' ? <SetPrint /> : <Navigate to="/login" />} />
               <Route path="/students/printid" element={role === 'admin' ? <PrintId /> : <Navigate to="/login" />} />
               <Route path="/settings" element={role === 'admin' ? <Settings /> : <Navigate to='/login' />} />

@@ -48,7 +48,7 @@ export default function Header() {
           Welcome {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1)  : ""}!
         </h1>
         <button 
-          onClick={(isAdmin || isTeacher) ? handleLogoutClick : () => navigate('/login')} 
+          onClick={(isAdmin || isTeacher) ? handleLogoutClick : () => navigate('/signup')} 
           className='flex items-center gap-2 text-lg text-white hover:text-sky-300 rounded-lg transition-colors'
         >
           {isAdmin || isTeacher ? (
@@ -122,7 +122,7 @@ export default function Header() {
                 </>
             )}
             <button 
-                onClick={(isAdmin || isTeacher) ? handleLogoutClick : () => {navigate('/login'); setIsMenuOpen(false)}}
+                onClick={(isAdmin || isTeacher) ? handleLogoutClick : () => {navigate('/signup'); setIsMenuOpen(false)}}
                 className='flex items-center gap-2 text-lg w-full text-white hover:text-sky-600 rounded-lg transition-colors'
             >
             {isAdmin || isTeacher ? (

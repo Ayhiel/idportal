@@ -196,7 +196,6 @@ useEffect(() => {
 
 
   const handleFetchSelected = async () => {
-    console.log("Selected IDs:", selectedRows);
 
     if (!selectedRows || selectedRows.length === 0) {
       setModalTitle("Generate ID");

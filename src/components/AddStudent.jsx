@@ -269,120 +269,187 @@ const brgy = addresses.length && form.province && form.town
         const currentLastname = form.lastname?.trim();
         const currentLRN = form.lrn?.trim();
 
-        // Check LRN uniqueness
+        // Check LRN uniqueness (skip if editing same student)
         const { data: existing } = await supabase
-        .from("tblstudents")
-        .select("id")
-        .eq("lrn", currentLRN)
-        .maybeSingle();
+            .from("tblstudents")
+            .select("id")
+            .eq("lrn", currentLRN)
+            .maybeSingle();
 
         const existingId = existing?.id?.toString();
         const currentId = studentid?.toString();
 
         if (existing && existingId !== currentId) {
-        setModalOpen(true);
-        setModalTitle("Warning!");
-        setModalMessage("The LRN already exists. Please enter a unique LRN.");
-        return;
+            setModalOpen(true);
+            setModalTitle("Warning!");
+            setModalMessage("The LRN already exists. Please enter a unique LRN.");
+            setLoadingSubmit(false);
+            return;
         }
 
-        let finalProfileUrl = form.profile_url; // Default keep existing
+        let finalProfileUrl = form.profile_url || ''; // Start with existing or empty
 
         // Helper: generate unique filename
         const generateProfileFilename = (lastname, lrn, extension) => {
-        const timestamp = Date.now();
-        return `${lastname?.toUpperCase().replace(/\s+/g, '_')}_${lrn}_${timestamp}.${extension}`;
+            const timestamp = Date.now();
+            return `${lastname?.toUpperCase().replace(/\s+/g, '_')}_${lrn}_${timestamp}.${extension}`;
         };
 
         // Helper: get public URL
-        const getPublicUrl = (filename) =>
-        supabase.storage.from('id-profile').getPublicUrl(filename).data.publicUrl;
+        const getPublicUrl = (filename) => {
+            const { data } = supabase.storage.from('id-profile').getPublicUrl(filename);
+            return data.publicUrl;
+        };
 
-        // 🔹 Rename old profile if no new upload but LRN or lastname changed
-        if (form.profile_url && !profileFile) {
-        const url = new URL(form.profile_url);
-        const oldFilePath = decodeURIComponent(url.pathname.replace('/storage/v1/object/public/id-profile/', ''));
-        const extension = oldFilePath.split('.').pop();
-        const newFileName = generateProfileFilename(currentLastname, currentLRN, extension);
-
-        // Copy old file to new name
-        const { error: copyError } = await supabase.storage
-            .from('id-profile')
-            .copy(oldFilePath, newFileName);
-        if (copyError) throw copyError;
-
-        // Delete old file after successful copy
-        await deleteOldProfile(form.profile_url);
-
-        // Update final URL
-        finalProfileUrl = getPublicUrl(newFileName);
-        }
-
-        // 🔹 Upload new profile if user selected a new file
+        // 🔹 CASE 1: User uploaded a new profile image
         if (profileFile) {
-        const extension = profileFile.name.split('.').pop();
-        const uniqueName = generateProfileFilename(currentLastname, currentLRN, extension);
+        
+            // Delete old profile if exists
+            if (form.profile_url) {
+                await deleteOldProfile(form.profile_url);
+            }
 
-        const { error } = await supabase.storage
-            .from('id-profile')
-            .upload(uniqueName, profileFile, { upsert: true });
-        if (error) throw error;
+            // Upload new profile
+            const extension = profileFile.name.split('.').pop();
+            const uniqueName = generateProfileFilename(currentLastname, currentLRN, extension);
 
-        // Delete old profile if exists
-        if (form.profile_url) await deleteOldProfile(form.profile_url);
+            const { error: uploadError } = await supabase.storage
+                .from('id-profile')
+                .upload(uniqueName, profileFile, { 
+                    upsert: false,
+                    contentType: profileFile.type 
+                });
 
-        finalProfileUrl = getPublicUrl(uniqueName);
+            if (uploadError) {
+                console.error('Upload error:', uploadError);
+                throw new Error('Failed to upload profile image: ' + uploadError.message);
+            }
+
+            // Get public URL
+            finalProfileUrl = getPublicUrl(uniqueName);
+        }
+        // 🔹 CASE 2: No new upload, but LRN or lastname changed (rename existing file)
+        else if (form.profile_url && (form.lastname !== currentLastname || form.lrn !== currentLRN)) {
+            
+            try {
+                const url = new URL(form.profile_url);
+                const oldFilePath = decodeURIComponent(
+                    url.pathname.replace('/storage/v1/object/public/id-profile/', '')
+                );
+                const extension = oldFilePath.split('.').pop();
+                const newFileName = generateProfileFilename(currentLastname, currentLRN, extension);
+
+
+                // Download old file
+                const { data: fileData, error: downloadError } = await supabase.storage
+                    .from('id-profile')
+                    .download(oldFilePath);
+
+                if (downloadError) {
+                    console.error('Download error:', downloadError);
+                    throw downloadError;
+                }
+
+                // Upload with new name
+                const { error: uploadError } = await supabase.storage
+                    .from('id-profile')
+                    .upload(newFileName, fileData, { upsert: false });
+
+                if (uploadError) {
+                    console.error('Upload error:', uploadError);
+                    throw uploadError;
+                }
+
+                // Delete old file
+                await deleteOldProfile(form.profile_url);
+
+                // Update final URL
+                finalProfileUrl = getPublicUrl(newFileName);
+
+            } catch (renameError) {
+                console.error('Rename failed:', renameError);
+                // Keep old URL if rename fails
+                finalProfileUrl = form.profile_url;
+            }
+        }
+        // 🔹 CASE 3: No changes, keep existing URL
+        else {
+            finalProfileUrl = form.profile_url || '';
         }
 
-        const date_added = new Date();
+        const date_added = new Date().toISOString();
+
+        // Prepare final data
+        const studentData = {
+            lrn: currentLRN,
+            lastname: currentLastname,
+            firstname: form.firstname?.trim(),
+            middlename: form.middlename?.trim(),
+            parent: form.parent?.trim(),
+            parentnumber: form.parentnumber?.trim(),
+            brgy: form.brgy,
+            town: form.town,
+            province: form.province,
+            gradelevel: form.gradelevel,
+            strand: form.strand,
+            section: form.section,
+            adviser: form.adviser,
+            profile_url: finalProfileUrl, // ✅ This should now have the correct URL
+        };
+
 
         // 🔹 Update existing student
         if (studentid) {
-        const { error } = await supabase
-            .from('tblstudents')
-            .update({
-            ...form,
-            lastname: currentLastname,
-            lrn: currentLRN,
-            profile_url: finalProfileUrl,
-            })
-            .eq('id', studentid);
-        if (error) throw error;
-        } 
-        // Insert new student
-        else {
-        const { error } = await supabase
-            .from('tblstudents')
-            .insert([{
-            ...form,
-            lastname: currentLastname,
-            lrn: currentLRN,
-            profile_url: finalProfileUrl,
-            date_added,
-        }]);
-        if (error) throw error;
+            const { error: updateError } = await supabase
+                .from('tblstudents')
+                .update(studentData)
+                .eq('id', studentid);
 
-        // Reset form after new insert
-        setForm({
-            lrn: "",
-            lastname: "",
-            firstname: "",
-            middlename: "",
-            parent: "",
-            parentnumber: "",
-            brgy: "",
-            town: "",
-            province: "",
-            gradelevel: "",
-            strand: "",
-            section: "",
-            adviser: "",
-        });
-        setPreviewUrl(DEFAULT_PROFILE);
-        setProfileFile(null);
-        setUploadedImageUrl(null);
-        setShowUploadCrop(false);
-        if (fileInputRef.current) fileInputRef.current.value = "";
+            if (updateError) {
+                console.error('Update error:', updateError);
+                throw updateError;
+            }
+
+            console.log('Student updated successfully');
+        } 
+        // 🔹 Insert new student
+        else {
+            const { error: insertError } = await supabase
+                .from('tblstudents')
+                .insert([{
+                    ...studentData,
+                    date_added,
+                }]);
+
+            if (insertError) {
+                console.error('Insert error:', insertError);
+                throw insertError;
+            }
+
+            console.log('Student inserted successfully');
+
+            // Reset form after new insert
+            setForm({
+                lrn: "",
+                lastname: "",
+                firstname: "",
+                middlename: "",
+                parent: "",
+                parentnumber: "",
+                brgy: "",
+                town: "",
+                province: "",
+                gradelevel: "",
+                strand: "",
+                section: "",
+                adviser: "",
+                profile_url: "",
+            });
+            setPreviewUrl(DEFAULT_PROFILE);
+            setProfileFile(null);
+            setUploadedImageUrl(null);
+            setShowUploadCrop(false);
+            if (fileInputRef.current) fileInputRef.current.value = "";
         }
 
         setModalOpen(true);
@@ -391,36 +458,44 @@ const brgy = addresses.length && form.province && form.town
         setIsSuccess(true);
 
     } catch (err) {
-        console.error(err);
+        console.error('Submit error:', err);
         setModalOpen(true);
         setModalTitle("Error!");
-        setModalMessage("Failed to save student");
+        setModalMessage(err.message || "Failed to save student");
     } finally {
         setLoadingSubmit(false);
     }
-    };
+};
 
 
     // Delete old profile from storage
-    const deleteOldProfile = async (profileUrl) => {
+// Delete old profile from storage
+const deleteOldProfile = async (profileUrl) => {
     if (!profileUrl) return;
 
     try {
+        // Extract filename from URL
         const url = new URL(profileUrl);
-        // Extract file path after the bucket name
-        const filePath = url.pathname.replace('/storage/v1/object/public/id-profile/', '');
-        if (!filePath) return;
+        const filePath = decodeURIComponent(
+            url.pathname.replace('/storage/v1/object/public/id-profile/', '')
+        );
+        
+        if (!filePath || filePath === 'Profile.png') {
+            return; // Don't delete default profile
+        }
 
         const { error } = await supabase.storage
-        .from("id-profile")
-        .remove([filePath]);
+            .from("id-profile")
+            .remove([filePath]);
 
-        if (error) console.error("Failed to delete old profile:", error);
+        if (error) {
+            console.error("Failed to delete old profile:", error);
+        }
         
     } catch (err) {
         console.error("Error removing profile:", err);
     }
-    };
+};
 
 
     // Handle Closing the modal

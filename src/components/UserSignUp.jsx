@@ -96,26 +96,25 @@ export default function SignUpPage() {
                 return;
             }
 
-            // Insert into tbluser
+            // Call the database function instead of direct insert
             const { error: insertError } = await supabase
-                .from('tbluser')
-                .insert([{
-                    auth_id: authData.user.id,
-                    email: data.email,
-                    firstname: data.firstname.trim().toUpperCase(),
-                    lastname: data.lastname.trim().toUpperCase(),
-                    middlename: data.middlename.trim().toUpperCase(),
-                    username: data.username,
-                    role: 'teacher' // default role
-                }]);
+                .rpc('create_user_profile', {
+                    p_auth_id: authData.user.id,
+                    p_email: data.email,
+                    p_firstname: data.firstname.trim().toUpperCase(),
+                    p_lastname: data.lastname.trim().toUpperCase(),
+                    p_middlename: data.middlename.trim().toUpperCase(),
+                    p_username: data.username
+                });
 
             if (insertError) {
+                console.error('Insert error:', insertError);
                 setMsg('Failed to create user profile.');
                 return;
             }
 
             setModalTitle("Sign Up Successful");
-            setModalMessage("Please check your email to verify your account.");
+            setModalMessage("Your account has been successfully created.");
             setIsSuccess(true);
             setModalOpen(true);
 

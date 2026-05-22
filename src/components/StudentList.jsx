@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { supabase } from "./supabaseClient";
 import { BackwardIcon, CheckIcon, ForwardIcon, PencilSquareIcon, TrashIcon, UserCircleIcon} from '@heroicons/react/24/solid';
 import CustomModal from "./CustomModal";
@@ -33,7 +33,7 @@ export default function StudentList() {
   const [selectAllRows, setSelectAllRows] = useState(false);
 
 
-const fetchStudents = async (search = '', gradelevel = '', strand = '', section = '') => {
+const fetchStudents = useCallback(async (search = '', gradelevel = '', strand = '', section = '') => {
   if (!user?.id) {
     console.warn('No user logged in yet.');
     return;
@@ -74,7 +74,7 @@ const fetchStudents = async (search = '', gradelevel = '', strand = '', section 
   } catch (err) {
     console.error('Error fetching students:', err);
   }
-};
+}, [user]);
 
 
 useEffect(() => {
@@ -95,7 +95,7 @@ useEffect(() => {
   // Fetch students immediately
   fetchStudents(search, grade, str, sec);
 
-}, [location.search, user]);
+}, [fetchStudents, location.search, user]);
 
 
 useEffect(() => {
@@ -106,7 +106,7 @@ useEffect(() => {
   }, 300);
 
   return () => clearTimeout(delayDebounce);
-}, [searchTerm, gradelevel, strand, section, user]); // add `user` as dependency
+}, [fetchStudents, searchTerm, gradelevel, strand, section, user]); // add `user` as dependency
 
 
 
@@ -114,7 +114,7 @@ useEffect(() => {
     const start = pageIndex * studentPerPage;
     const end = start + studentPerPage;
     return students.slice(start, end);
-  }, [students, pageIndex])
+  }, [students, pageIndex, studentPerPage])
 
   const handleEdit = (id) => {
     localStorage.setItem(

@@ -9,7 +9,7 @@ import { supabase } from './supabaseClient';
 // Function to add data to database
 export default function AddStudent() {
     // Get the user role
-    const { role, user } = useAuth();
+    const { role } = useAuth();
 
     // Setting up the signup form
     const [form, setForm] = useState({ lrn: '', lastname: '', firstname: '', middlename: '', parent: '', parentnumber: '', brgy: '', town: '', province: '', profile_url: '', gradelevel:'', strand: '' , section: '', adviser: ''});
@@ -100,12 +100,7 @@ export default function AddStudent() {
         });
     };
 
-        // Fetch advisers on component mount
-    useEffect(() => {
-        fetchAdvisers();
-    }, []);
-
-    const fetchAdvisers = async () => {
+    const fetchAdvisers = useCallback(async () => {
         setLoading(true);
         setAdviserError('');
         try {
@@ -128,7 +123,12 @@ export default function AddStudent() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+        // Fetch advisers on component mount
+    useEffect(() => {
+        fetchAdvisers();
+    }, [fetchAdvisers]);
 
     // Fetch all students during editing
     useEffect(() => {

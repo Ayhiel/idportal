@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import { UserCircleIcon} from '@heroicons/react/24/solid';
-import CustomModal from "./CustomModal";
 import { useNavigate, useLocation } from "react-router-dom";
 
 export default function SetPrint() {
@@ -10,13 +9,7 @@ export default function SetPrint() {
     const [students, setStudents] = useState([]);
     const [totalCount, setTotalCount] = useState(0);
 
-    const [modalOpen, setModalOpen] = useState(false);
-    const [modalTitle, setModalTitle] = useState("");
-    const [modalMessage, setModalMessage] = useState("");
-    const [showConfirm, setShowConfirm] = useState(false);
-
     const [searchTerm, setSearchTerm] = useState('');
-    const [confirmCallback, setConfirmCallback] = useState(() => () => {});
     const [resultsFound, setResultsFound] = useState(0);
 
     const [strand, setStrand] = useState('');
@@ -37,12 +30,29 @@ useEffect(() => {
   setStrand(strand);
   setSection(section);
 
-  fetchStudents(search, strand, section);
-}, [location.search]); // 👈 Use `location.search` only
+  const loadStudents = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/students?search=${search}&strand=${strand}&section=${section}`);
+      setStudents(res.data.students);
+
+      if (search || strand || section) {
+        setResultsFound(res.data.resultsFound ?? 0);
+        setTotalCount(null);
+      } else {
+        setTotalCount(res.data.total ?? 0);
+        setResultsFound(null);
+      }
+    } catch (err) {
+      console.error('Error fetching students:', err);
+    }
+  };
+
+  loadStudents();
+}, [API_URL, location.search]);
 
 
 
-    const fetchStudents = async (search = '', strand = '', section = '') => {
+    const fetchStudents = useCallback(async (search = '', strand = '', section = '') => {
       try {
         const res = await axios.get(`${API_URL}/api/students?search=${search}&strand=${strand}&section=${section}`);
         setStudents(res.data.students);
@@ -57,57 +67,17 @@ useEffect(() => {
       } catch (err) {
         console.error('Error fetching students:', err);
       }
-    };
+    }, [API_URL]);
 
 
     useEffect(() => {
       const delayDebounce = setTimeout(() => {
-        handleSearch();
+        fetchStudents(searchTerm, strand, section);
       }, 300); // delay for debounce typing
 
       return () => clearTimeout(delayDebounce);
-    }, [searchTerm, strand, section]); // re-trigger when search or strand changes
+    }, [fetchStudents, searchTerm, strand, section]); // re-trigger when search or strand changes
 
-
-    const handleEdit = (id) => {
-      localStorage.setItem(
-        'student-filters',
-        JSON.stringify({
-          search: searchTerm,
-          strand,
-          section,
-        })
-      );
-      navigate(`/signup?id=${id}`);
-    };
-
-
-
-    const handleSearch = async() => {
-      fetchStudents(searchTerm, strand, section);
-    }
-
-    const handleDelete = async (id) => {
-        setModalTitle("Delete Confirmation");
-        setModalMessage("Are you sure you want to delete this student?");
-        setShowConfirm(true);
-        setConfirmCallback(() => async () => {
-          try {
-              await axios.delete(`${API_URL}/api/students/${id}`);
-              setShowConfirm(false);
-              setModalOpen(false);
-              fetchStudents(searchTerm, strand, section);
-          } catch (err) {
-              console.error(err);
-              setModalOpen(false);
-              setModalTitle("Error");
-              setModalMessage("Failed to delete student.");
-              setShowConfirm(false);
-              setModalOpen(true);
-          }
-        });
-        setModalOpen(true);
-    }
 
     const handleCheckboxChange = (id) => {
     
@@ -243,16 +213,6 @@ useEffect(() => {
               </tbody>
             </table>
           </div>
-
-          <CustomModal
-            isOpen={modalOpen}
-            onClose={() => setModalOpen(false)}
-            onConfirm={confirmCallback}
-            title={modalTitle}
-            message={modalMessage}
-            showConfirm={showConfirm}
-          />
-
         </div>
       </div>
   );

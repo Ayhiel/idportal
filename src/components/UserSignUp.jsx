@@ -190,14 +190,14 @@ export default function SignUpPage() {
                 />
 
                 {/* Username */}
-                <input
+                {/* <input
                     className="text-xl border border-gray-300 rounded-md p-2 mb-4 w-full"
                     placeholder="Username *"
                     type="text"
                     name="username"
                     disabled={loading}
                     
-                />
+                /> */}
 
                 {/* Password */}
                 <div className='flex-col mb-4 w-full'>

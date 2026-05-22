@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
@@ -32,7 +32,7 @@ export default function LoginPage() {
 
             const { data: userData, error: userError } = await supabase
                 .from('tbluser')
-                .select('id, username, role, email')
+                .select('id, username, firstname, lastname, middlename, role, email')
                 .eq('auth_id', data.user.id)
                 .single();
 
@@ -72,9 +72,17 @@ export default function LoginPage() {
         return false; // Important: return false for error
     };
 
-    window.addEventListener('beforeunload', () => {
-    sessionStorage.removeItem('passcodeVerified');
-    });
+    useEffect(() => {
+        const clearPasscode = () => {
+            sessionStorage.removeItem('passcodeVerified');
+        };
+
+        window.addEventListener('beforeunload', clearPasscode);
+
+        return () => {
+            window.removeEventListener('beforeunload', clearPasscode);
+        };
+    }, []);
 
     return (
         <div className="min-h-screen flex flex-col justify-center items-center">

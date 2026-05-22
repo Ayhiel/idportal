@@ -1,7 +1,7 @@
 import { ArrowLeftEndOnRectangleIcon, IdentificationIcon, PowerIcon, Bars3Icon, XMarkIcon, UserPlusIcon } from '@heroicons/react/24/solid'; // or any icon you're using
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import CustomModal from "./CustomModal";
 import PassCodeModal from './PassCodeModal';
 
@@ -48,9 +48,17 @@ export default function Header() {
     return false; // Important: return false for error
   };
 
-  window.addEventListener('beforeunload', () => {
-  sessionStorage.removeItem('passcodeVerified');
-});
+  useEffect(() => {
+    const clearPasscode = () => {
+      sessionStorage.removeItem('passcodeVerified');
+    };
+
+    window.addEventListener('beforeunload', clearPasscode);
+
+    return () => {
+      window.removeEventListener('beforeunload', clearPasscode);
+    };
+  }, []);
 
     return (
   <>
@@ -66,7 +74,7 @@ export default function Header() {
       {/* Desktop Menu */}
       <div className='hidden lg:flex items-center gap-6'>
         <h1 className='text-lg font-semibold'>
-          Welcome {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1)  : ""}!
+          Welcome {user?.firstname ? user.firstname.charAt(0).toUpperCase() + user.firstname.slice(1).toLowerCase()  : ""}!
         </h1>
         <button 
           onClick={(isAdmin || isTeacher) ? handleLogoutClick : () => navigate('/login')} 
@@ -123,7 +131,7 @@ export default function Header() {
     >
       <div className='flex flex-col pt-16'>
         <h1 className='text-lg font-bold text-white p-8 bg-sky-800'>
-          Welcome {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1)  : ""}!
+          Welcome {user?.firstname ? user.firstname.charAt(0).toUpperCase() + user.firstname.slice(1).toLowerCase() : ""}!
         </h1>
         <div className='flex flex-col gap-8 text-white p-8'>
             {(isAdmin || isTeacher) && (

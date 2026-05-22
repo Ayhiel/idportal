@@ -19,7 +19,7 @@ export function AuthProvider({ children }) {
         // Fetch user data from tbluser
         const { data: userData } = await supabase
           .from('tbluser')
-          .select('id, username, email, role')
+          .select('id, username, firstname, lastname, middlename, email, role')
           .eq('auth_id', authUser.id)
           .single();
         

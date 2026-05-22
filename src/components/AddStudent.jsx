@@ -535,7 +535,7 @@ const deleteOldProfile = async (profileUrl) => {
         ) : (
             <>
         <div className="sm:shadow-lg rounded-xl max-w-xl mx-auto p-4 mt-8">
-            <h1 className="text-2xl text-center font-bold mt-4">Student Registration</h1>
+            <h1 className="text-2xl text-center font-bold mt-4">Student Information</h1>
             <form onSubmit={handleSubmit} className="w-full mt-8 mb-4">
                 <div className='mb-4'>
                     <input 

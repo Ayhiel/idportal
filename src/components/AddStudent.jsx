@@ -9,7 +9,7 @@ import { supabase } from './supabaseClient';
 // Function to add data to database
 export default function AddStudent() {
     // Get the user role
-    const { role } = useAuth();
+    const { role, user } = useAuth();
 
     // Setting up the signup form
     const [form, setForm] = useState({ lrn: '', lastname: '', firstname: '', middlename: '', parent: '', parentnumber: '', brgy: '', town: '', province: '', profile_url: '', gradelevel:'', strand: '' , section: '', adviser: ''});
@@ -27,6 +27,7 @@ export default function AddStudent() {
     const [uploadedImageUrl, setUploadedImageUrl] = useState('');
 
     const [advisers, setAdvisers] = useState([]);
+    const [adviserError, setAdviserError] = useState('');
 
     // Opening Custom Modal
     const [modalOpen, setModalOpen] = useState(false);
@@ -106,20 +107,24 @@ export default function AddStudent() {
 
     const fetchAdvisers = async () => {
         setLoading(true);
+        setAdviserError('');
         try {
             const { data, error } = await supabase
                 .from('tbluser')
-                .select('id, firstname, lastname, middlename, email')
+                .select('id, firstname, lastname, middlename, email, role')
+                .ilike('role', 'teacher')
                 .order('lastname', { ascending: true }); // Sort by lastname
 
             if (error) {
                 console.error('Error fetching advisers:', error);
+                setAdviserError(error.message || 'Failed to load advisers');
                 return;
             }
 
             setAdvisers(data || []);
         } catch (err) {
             console.error('Error:', err);
+            setAdviserError(err.message || 'Failed to load advisers');
         } finally {
             setLoading(false);
         }
@@ -393,7 +398,7 @@ const brgy = addresses.length && form.province && form.town
             gradelevel: form.gradelevel,
             strand: form.strand,
             section: form.section,
-            adviser: form.adviser,
+            adviser: form.adviser ? Number(form.adviser) : null,
             profile_url: finalProfileUrl, // ✅ This should now have the correct URL
         };
 
@@ -653,16 +658,10 @@ const deleteOldProfile = async (profileUrl) => {
                         required={isSHS}
                     >
                         <option value="">Select Strand</option>
-                        <option value="ABM">Accountancy, Business, and Management (ABM)</option>
-                        <option value="STEM">Science, Technology, Engineering, and Mathematics (STEM)</option>
-                        <option value="HUMSS">Humanities and Social Sciences (HUMSS)</option>
-                        <option value="GAS">General Academic Strand (GAS)</option>
-                        <option value="HE">Home Economics (HE)</option>
-                        <option value="AFA">Agri-Fishery Arts (AFA)</option>
-                        <option value="ICT">Information and Communication Technology (ICT)</option>
-                        <option value="IA">Industrial Arts (IA)</option>
+                        <option value="ACAD">ACADEMIC</option>
+                        <option value="TECHPRO">TECHPRO</option>
                     </select>
-                    <select
+                    {/* <select
                         value={form.section}
                         className="w-full mb-4 flex-1 p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
                         onChange={(e) => updatedField('section', e.target.value)}
@@ -675,8 +674,7 @@ const deleteOldProfile = async (profileUrl) => {
                         <option value="rlb">RLB</option>
                         <option value="cpc">CPC</option>
                         <option value="rbp">RBP</option>
-                        <option value="aag">AAG</option>
-                    </select>
+                    </select> */}
                 </div>
                 <select
                     value={form.adviser}
@@ -684,8 +682,12 @@ const deleteOldProfile = async (profileUrl) => {
                     onChange={(e) => updatedField('adviser', e.target.value)}
                     >
                     <option value="">{loading ? 'Loading advisers...' : 'Adviser'}</option>
+                    {!loading && advisers.length === 0 && (
+                        <option value="" disabled>
+                            {adviserError ? `Unable to load advisers: ${adviserError}` : 'No advisers found'}
+                        </option>
+                    )}
                     {advisers
-                        .filter(adviser => adviser.id !== 1)
                         .map((adviser) => (
                             <option key={adviser.id} value={adviser.id} className='uppercase'>
                             {`${adviser.lastname}, ${adviser.firstname} ${adviser.middlename || ''}`.trim()}

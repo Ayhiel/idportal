@@ -130,8 +130,8 @@ useEffect(() => {
   };
 
   const handleDelete = async (id) => {
-    setModalTitle("Delete Confirmation");
-    setModalMessage("Are you sure you want to delete this student?");
+    setModalTitle("Are you sure you want to delete this student?");
+    // setModalMessage("Are you sure you want to delete this student?");
     setShowConfirm(true);
 
     setConfirmCallback(() => async () => {
@@ -410,6 +410,9 @@ useEffect(() => {
                       <th className="p-2">Status</th>
                     </>
                   )}
+                  {(role !== 'admin') && (
+                    <th className="p-2">Status</th>
+                  )}
                   <th className="p-2">Action</th>
                 </tr>
               </thead>
@@ -513,6 +516,20 @@ useEffect(() => {
                               </label>
                             </td>
                           </>
+                        )}
+                        {(role !== 'admin') && (
+                          <td className="border p-2">
+                            <div className="flex flex-col items-center text-[8pt] font-medium ml-1">
+                                {s.claimed ? "Claimed" : "Not Claimed"}
+                                {s.claimed && s.date_claimed ? (
+                                  <span className="text-[6pt] text-gray-500">
+                                    {new Date(s.date_claimed).toLocaleDateString()}
+                                  </span>
+                                ) : (
+                                  ""
+                                )}
+                              </div>
+                          </td>
                         )}
                         <td className="p-2">
                             <div className="flex flex-row gap-2">

@@ -6,6 +6,7 @@ import CustomModal from './CustomModal';
 export default function SignUpPage() {
     const navigate = useNavigate();
     const [showpass, setShowpass] = useState(false);
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [loading, setLoading] = useState(false);
     const [msg, setMsg] = useState('');
 
@@ -47,6 +48,12 @@ export default function SignUpPage() {
         };
 
         // Validation checks
+        if (!acceptedTerms) {
+            setMsg('Please read and accept the Terms and Conditions before signing up.');
+            setLoading(false);
+            return;
+        }
+
         if (!data.firstname || !data.lastname || !data.email || !data.password || !data.confirmPassword) {
             setMsg('Please fill in all required fields.');
             setLoading(false);
@@ -248,6 +255,37 @@ export default function SignUpPage() {
                         
                     />
                 </div>
+
+                {/* Terms and Conditions */}
+                <div className="w-full mb-4 rounded-md border border-gray-300 bg-gray-50 p-3">
+                    <h3 className="text-sm font-bold text-gray-800 mb-2">Terms and Conditions</h3>
+                    <div className="max-h-32 overflow-y-auto pr-2 text-xs leading-5 text-gray-600">
+                        <p className="mb-2">
+                            By creating an account, you agree to use the Student ID Portal only for authorized school-related purposes and to provide accurate registration information.
+                        </p>
+                        <p className="mb-2">
+                            You are responsible for keeping your login details confidential and for all activity made through your account. Do not share your password or use another user's account.
+                        </p>
+                        <p className="mb-2">
+                            Personal information submitted through this portal may be collected, stored, and processed for account management, student ID generation, record verification, and related administrative services.
+                        </p>
+                        <p>
+                            Misuse of the system, unauthorized access, false information, or activity that compromises student records may result in account restriction or removal.
+                        </p>
+                    </div>
+                    <label htmlFor="accept-terms" className="mt-3 flex items-start gap-2 text-sm text-gray-700 cursor-pointer">
+                        <input
+                            id="accept-terms"
+                            type="checkbox"
+                            checked={acceptedTerms}
+                            onChange={(e) => setAcceptedTerms(e.target.checked)}
+                            disabled={loading}
+                            className="mt-1 h-4 w-4 cursor-pointer disabled:cursor-not-allowed"
+                        />
+                        <span>I have read and agree to the Terms and Conditions.</span>
+                    </label>
+                </div>
+
                 <p className={`${!msg && 'hidden'} text-sm ${msg.includes('successful') ? 'text-green-500' : 'text-red-500'} mb-4`}>
                     {msg}
                 </p>
@@ -257,7 +295,7 @@ export default function SignUpPage() {
                     <button 
                         type="submit"
                         className="flex-1 bg-blue-500 text-white px-8 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 hover:bg-blue-600 transition-colors" 
-                        disabled={loading}
+                        disabled={loading || !acceptedTerms}
                     >
                         {loading ? (
                             <>

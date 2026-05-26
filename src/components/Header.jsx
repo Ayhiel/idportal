@@ -12,7 +12,7 @@ export default function Header() {
     // Opening Custom Modal
     const [modalOpen, setModalOpen] = useState(false);
     const [modalTitle, setModalTitle] = useState("");
-    const [modalMessage, setModalMessage] = useState("");
+    const [modalMessage] = useState("");
     const [modalAction, setModalAction] = useState(() => () => {});
     const [showConfirm, setShowConfirm] = useState(false);
     const [showModal, setShowModal] = useState(false);
@@ -26,8 +26,8 @@ export default function Header() {
     const handleCloseModal = () => setModalOpen(false);
 
     const handleLogoutClick = () => {
-      setModalTitle("Confirm Logout");
-      setModalMessage("Are you sure you want to log out?");
+      setModalTitle("Are you sure you want to log out?");
+      // setModalMessage("Are you sure you want to log out?");
       setModalAction(() => async () => {
         await logout();
         navigate("/signup");

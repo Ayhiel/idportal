@@ -286,8 +286,8 @@ const brgy = addresses.length && form.province && form.town
 
         if (existing && existingId !== currentId) {
             setModalOpen(true);
-            setModalTitle("Warning!");
-            setModalMessage("The LRN already exists. Please enter a unique LRN.");
+            setModalTitle("The LRN already exists. Please enter a unique LRN");
+            // setModalMessage("The LRN already exists. Please enter a unique LRN.");
             setLoadingSubmit(false);
             return;
         }
@@ -458,8 +458,8 @@ const brgy = addresses.length && form.province && form.town
         }
 
         setModalOpen(true);
-        setModalTitle(studentid ? "Update Student" : "Add Student");
-        setModalMessage(studentid ? "Student updated successfully" : "Student added successfully");
+        setModalTitle(studentid ? "Student updated successfully" : "Student added successfully");
+        // setModalMessage(studentid ? "Student updated successfully" : "Student added successfully");
         setIsSuccess(true);
 
     } catch (err) {

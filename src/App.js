@@ -1,11 +1,12 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate} from 'react-router-dom';
-import { UserPlusIcon, IdentificationIcon} from '@heroicons/react/24/solid';
+import { UserPlusIcon, IdentificationIcon, Cog6ToothIcon, UserGroupIcon} from '@heroicons/react/24/solid';
 import Modal from 'react-modal';
 import AddStudent from './components/AddStudent';
 import StudentList from './components/StudentList';
 import PrintId from './components/PrintId';
 import SetPrint from './components/SetPrint';
 import Settings from './components/Settings';
+import UserList from './components/UserList';
 import Header from './components/Header';
 import { AuthProvider, useAuth } from './components/AuthContext';
 import LoginPage from './components/UserLog';
@@ -72,13 +73,22 @@ function AppContent() {
                     }
                     navigate={navigate}
                   />
-                  {/* <SidebarButton
+                  {(isAdmin) && (
+                    <SidebarButton
+                    icon={<UserGroupIcon className="xl:w-10 w-8 mb-2" />}
+                    label="Users"
+                    path="/users"
+                    currentPath={currentPath}
+                    navigate={navigate}
+                  />
+                  )}
+                  <SidebarButton
                     icon={<Cog6ToothIcon className="xl:w-10 w-8 mb-2" />}
                     label="Settings"
                     path="/settings"
                     currentPath={currentPath}
                     navigate={navigate}
-                  /> */}
+                  />
                 
             </div>
               
@@ -103,7 +113,8 @@ function AppContent() {
               <Route path="/students" element={role === 'admin' || role === 'teacher' ? <StudentList /> : <Navigate to='/login' />} />
               <Route path="/setprint" element={role === 'admin' ? <SetPrint /> : <Navigate to="/login" />} />
               <Route path="/students/printid" element={role === 'admin' ? <PrintId /> : <Navigate to="/login" />} />
-              <Route path="/settings" element={role === 'admin' ? <Settings /> : <Navigate to='/login' />} />
+              <Route path="/users" element={role === 'admin' ? <UserList /> : <Navigate to="/login" />} />
+              <Route path="/settings" element={<Settings />} />
             </Routes>
           </main>
         </div>

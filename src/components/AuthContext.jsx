@@ -43,6 +43,16 @@ export function AuthProvider({ children }) {
     localStorage.setItem('isAuthenticated', 'true');
   };
 
+  const updateUser = (userData) => {
+    const nextUser = { ...user, ...userData };
+    setUser(nextUser);
+    if (nextUser.role) {
+      setRole(nextUser.role);
+      localStorage.setItem('role', nextUser.role);
+    }
+    localStorage.setItem('user', JSON.stringify(nextUser));
+  };
+
   const logout = async () => {
     await supabase.auth.signOut();
     setRole('student');
@@ -53,7 +63,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ role, user, login, logout }}>
+    <AuthContext.Provider value={{ role, user, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

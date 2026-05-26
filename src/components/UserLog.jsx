@@ -113,6 +113,9 @@ export default function LoginPage() {
                             <input id='show-pass' type="checkbox" checked={showpass} onChange={() => setShowpass(!showpass)} /> Show Password
                         </label>
                     </div>
+                    <p className="mt-2 text-sm text-gray-500 italic">
+                        Forgot your password? Please contact your system administrator to reset it.
+                    </p>
                 </div>
                 <div className='w-full flex flex-row gap-2'>
                     <button 

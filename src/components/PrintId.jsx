@@ -94,8 +94,8 @@ export default function PrintId() {
     }, [filteredStudents, qrCodes]);
 
     const strandMap = {
-        // TECHPRO: "Technical-Professional (TechPro) Track",
-        // ACAD: "Academic Track",
+        TECHPRO: "Technical-Professional Track",
+        ACAD: "Academic Track",
         ABM: "Accountancy, Business, & Management (ABM)",
         HUMSS: "Humanities & Social Sciences (HUMSS)",
         HE: "Home Economics (HE)",
@@ -185,10 +185,21 @@ export default function PrintId() {
                                         </div>
 
                                         <div className={`flex flex-col items-center text-center ${isSHS ? 'mt-[1.5mm]' : 'mt-[2.5mm]'}`}>
-                                            <div className={`${isSHS ? 'text-yellow-500' : 'text-blue-1000'} font-extrabold text-lg uppercase leading-tight`}>
+                                            <div
+                                                className={`${isSHS ? 'text-yellow-500' : 'text-blue-1000'} font-extrabold uppercase leading-tight w-full text-center`}
+                                                style={{
+                                                    fontSize: 'clamp(8pt, 3.5vw, 12pt)',
+                                                    whiteSpace: 'nowrap',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                }}
+                                            >
                                                 {student.lastname}
                                             </div>
-                                            <div className={`${isSHS ? 'text-yellow-500' : 'text-blue-1000'} font-extrabold uppercase`} style={{ fontSize: '8.5pt', lineHeight: '14px' }}>
+                                            <div
+                                                className={`${isSHS ? 'text-yellow-500' : 'text-blue-1000'} font-extrabold uppercase`}
+                                                style={{ fontSize: '8.5pt', lineHeight: '14px' }}
+                                            >
                                                 {student.firstname} {middleInitial}
                                             </div>
                                             <div className={`text-white font-bold mt-1`} style={{ fontSize: '10px', lineHeight: '8px' }}>
@@ -206,12 +217,10 @@ export default function PrintId() {
                                             ) : student.strand === 'TECHPRO' ? (
                                                 <>
                                                     <p>{strandMap[student.strand]}</p>
-                                                    <p
-                                                        style={{ fontSize: '7px', marginTop: '2px' }}
-                                                        className="text-white font-bold"
-                                                    >
-                                                        Technical-Professional Track
-                                                    </p>
+                                                </>
+                                            ) : student.strand === 'ACAD' ? (
+                                                <>
+                                                    <p>{strandMap[student.strand]}</p>
                                                 </>
                                             ) : (
                                                 <>

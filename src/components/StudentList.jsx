@@ -25,6 +25,9 @@ export default function StudentList() {
   const [gradelevel, setGradeLevel] = useState('');
   const [strand, setStrand] = useState('');
   const [section, setSection] = useState('');
+  const [adviser, setAdviser] = useState('');
+  const [advisers, setAdvisers] = useState([]);
+  const [adviserLoading, setAdviserLoading] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,7 +36,7 @@ export default function StudentList() {
   const [selectAllRows, setSelectAllRows] = useState(false);
 
 
-const fetchStudents = useCallback(async (search = '', gradelevel = '', strand = '', section = '') => {
+const fetchStudents = useCallback(async (search = '', gradelevel = '', strand = '', section = '', adviser = '') => {
   if (!user?.id) {
     console.warn('No user logged in yet.');
     return;
@@ -66,6 +69,7 @@ const fetchStudents = useCallback(async (search = '', gradelevel = '', strand = 
     if (gradelevel) query = query.eq('gradelevel', gradelevel);
     if (strand) query = query.eq('strand', strand);
     if (section) query = query.eq('section', section);
+    if (adviser) query = query.eq('adviser', Number(adviser));
 
     const { data, error, count } = await query;
     if (error) throw error;
@@ -81,13 +85,34 @@ const fetchStudents = useCallback(async (search = '', gradelevel = '', strand = 
     );
 
     setStudents(studentsWithImages);
-    setResultsFound(search || gradelevel || strand || section ? count : null);
-    setTotalCount(search || gradelevel || strand || section ? null : count);
+    setResultsFound(search || gradelevel || strand || section || adviser ? count : null);
+    setTotalCount(search || gradelevel || strand || section || adviser ? null : count);
 
   } catch (err) {
     console.error('Error fetching students:', err);
   }
 }, [user, role]);
+
+const fetchAdvisers = useCallback(async () => {
+  setAdviserLoading(true);
+
+  try {
+    const { data, error } = await supabase
+      .from('tbluser')
+      .select('id, firstname, lastname, middlename, role')
+      .ilike('role', 'teacher')
+      .order('lastname', { ascending: true });
+
+    if (error) throw error;
+
+    setAdvisers(data || []);
+  } catch (err) {
+    console.error('Error fetching advisers:', err);
+    setAdvisers([]);
+  } finally {
+    setAdviserLoading(false);
+  }
+}, []);
 
 
 useEffect(() => {
@@ -99,27 +124,35 @@ useEffect(() => {
   const grade = params.get('gradelevel') || '';
   const str = params.get('strand') || '';
   const sec = params.get('section') || '';
+  const adv = params.get('adviser') || '';
 
   setSearchTerm(search);
   setGradeLevel(grade);
   setStrand(str);
   setSection(sec);
+  setAdviser(adv);
 
   // Fetch students immediately
-  fetchStudents(search, grade, str, sec);
+  fetchStudents(search, grade, str, sec, adv);
 
 }, [fetchStudents, location.search, user]);
+
+useEffect(() => {
+  if (role === 'admin' || Number(user?.id) === 1) {
+    fetchAdvisers();
+  }
+}, [fetchAdvisers, role, user]);
 
 
 useEffect(() => {
   if (!user) return; // <-- important!
 
   const delayDebounce = setTimeout(() => {
-    fetchStudents(searchTerm, gradelevel, strand, section);
+    fetchStudents(searchTerm, gradelevel, strand, section, adviser);
   }, 300);
 
   return () => clearTimeout(delayDebounce);
-}, [fetchStudents, searchTerm, gradelevel, strand, section, user]); // add `user` as dependency
+}, [fetchStudents, searchTerm, gradelevel, strand, section, adviser, user]); // add `user` as dependency
 
 
 
@@ -137,6 +170,7 @@ useEffect(() => {
         gradelevel,
         strand,
         section,
+        adviser,
       })
     );
     navigate(`/signup?id=${id}`);
@@ -183,7 +217,7 @@ useEffect(() => {
 
         setShowConfirm(false);
         setModalOpen(false);
-        fetchStudents(searchTerm, gradelevel, strand, section);
+        fetchStudents(searchTerm, gradelevel, strand, section, adviser);
 
       } catch (err) {
         console.error(err);
@@ -281,9 +315,9 @@ useEffect(() => {
   };
 
     return (
-      <div className="h-screen px-6 mt-8 overflow-hidden">
+      <div className="flex h-screen min-w-0 flex-col overflow-hidden px-3 pt-8 pb-6 sm:px-6">
         
-          <div className="sticky top-12 z-10 mx-auto bg-white flex flex-col lg:flex-row items-center gap-2 max-w-full">
+          <div className="sticky top-12 z-10 mx-auto bg-white flex w-full min-w-0 flex-col lg:flex-row items-center gap-2">
             <div className="flex flex-col w-full gap-2 lg:flex-row">
               <input className="text-xs lg:text-sm w-full flex-1 border border-gray-400 p-2 rounded" placeholder="Type LRN or name here" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
               {role === 'admin' && (
@@ -307,24 +341,28 @@ useEffect(() => {
                     onChange={(e) => setStrand(e.target.value)}
                   >
                     <option value="">by Strand</option>
+                    <option value="ACAD">Academic</option>
+                    <option value="TECHPRO">Technical-Professional</option>
+                    <option value="ABM">Accountancy, Business, and Management (ABM)</option>
                     <option value="ABM">Accountancy, Business, and Management (ABM)</option>
                     <option value="HUMSS">Humanities and Social Sciences (HUMSS)</option>
                     <option value="HE">Home Economics (HE)</option>
                     <option value="ICT">Information and Communications Technology (ICT)</option>
                   </select>
                   <select
-                    value={section}
+                    value={adviser}
                     className="w-full flex-1 text-xs lg:text-sm p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                    onChange={(e) => setSection(e.target.value)}
+                    onChange={(e) => setAdviser(e.target.value)}
                   >
-                    <option value="">by Section</option>
-                    <option value="jnc">JNC</option>
-                    <option value="dvt">DVT</option>
-                    <option value="etb">ETB</option>
-                    <option value="rlb">RLB</option>
-                    <option value="cpc">CPC</option>
-                    <option value="rbp">RBP</option>
-                    <option value="aag">AAG</option>
+                    <option value="">{adviserLoading ? 'Loading advisers...' : 'by Adviser'}</option>
+                    {!adviserLoading && advisers.length === 0 && (
+                      <option value="" disabled>No advisers found</option>
+                    )}
+                    {advisers.map((teacher) => (
+                      <option key={teacher.id} value={teacher.id}>
+                        {`${teacher.lastname}, ${teacher.firstname} ${teacher.middlename || ''}`.trim()}
+                      </option>
+                    ))}
                   </select>
                 </>
               )}
@@ -338,6 +376,7 @@ useEffect(() => {
                     setGradeLevel('');
                     setStrand('');
                     setSection('');
+                    setAdviser('');
                     localStorage.removeItem('student-filters');
                     navigate('/students', { replace: true });
                     fetchStudents();
@@ -355,15 +394,15 @@ useEffect(() => {
             )}
           </div>
     
-        <div className="max-w-full mx-auto mt-16 rounded-lg border border-gray-400 p-2">
+        <div className="mx-auto mt-4 flex min-h-0 w-full max-w-full flex-1 flex-col rounded-lg border border-gray-400 p-2 lg:mt-16">
           <h2 className="text-xl lg:text-2xl font-bold text-center mt-2">Student List</h2>
-          <div className="flex justify-between items-center mb-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center mb-2">
             {resultsFound !== null ? (
               <p className="sm:text-lg text-xs font-bold">Results Found: {resultsFound}</p>
             ) : (
               <p className="sm:text-lg text-xs font-bold">Results Found: {totalCount}</p>
             )}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <p className="text-sm text-gray-600">
                 Page {pageIndex + 1} of {Math.ceil(students.length / studentPerPage)}
               </p>
@@ -385,8 +424,8 @@ useEffect(() => {
               </div>
             </div>
           </div>
-          <div className="max-h-[75vh] xl:max-h-[65vh] overflow-y-auto">
-            <table className="w-full min-w-[1000px] table-auto uppercase">
+          <div className="min-h-0 flex-1 overflow-auto">
+            <table className="w-full min-w-[900px] table-auto uppercase">
               <thead className="text-xs lg:text-md bg-gray-400 text-sky-900 sticky top-0 z-20 shadow-[0_2px_0_0_#0c4a6e]">
                 <tr>
                   <th className="p-2">

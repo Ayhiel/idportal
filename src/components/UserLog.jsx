@@ -21,6 +21,7 @@ export default function LoginPage() {
     const [forgotMsg, setForgotMsg] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [showResetPassword, setShowResetPassword] = useState(false);
     const [resetLoading, setResetLoading] = useState(false);
     const [resetMsg, setResetMsg] = useState('');
 
@@ -322,7 +323,7 @@ export default function LoginPage() {
                         </p>
                         <input
                             className="mb-3 w-full rounded border border-gray-300 p-2"
-                            type="password"
+                            type={showResetPassword ? 'text' : 'password'}
                             placeholder="New password"
                             value={newPassword}
                             onChange={(e) => setNewPassword(e.target.value)}
@@ -331,13 +332,23 @@ export default function LoginPage() {
                         />
                         <input
                             className="mb-3 w-full rounded border border-gray-300 p-2"
-                            type="password"
+                            type={showResetPassword ? 'text' : 'password'}
                             placeholder="Confirm new password"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             disabled={resetLoading}
                             required
                         />
+                        <label htmlFor="show-reset-password" className="mb-3 flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+                            <input
+                                id="show-reset-password"
+                                type="checkbox"
+                                checked={showResetPassword}
+                                onChange={() => setShowResetPassword(prev => !prev)}
+                                disabled={resetLoading}
+                            />
+                            Show Password
+                        </label>
                         {resetMsg && (
                             <p className={`mb-3 text-sm ${resetMsg.includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>
                                 {resetMsg}

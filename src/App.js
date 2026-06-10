@@ -39,9 +39,10 @@ function AppContent() {
   const location = useLocation();
   const currentPath = location.pathname;
 
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const isAdmin = role === 'admin';
   const isTeacher = role === 'teacher';
+  const isSuperAdmin = Number(user?.id) === 1;
 
   return (
     <div className="min-h-screen">
@@ -73,7 +74,7 @@ function AppContent() {
                     }
                     navigate={navigate}
                   />
-                  {(isAdmin) && (
+                  {isSuperAdmin && (
                     <SidebarButton
                     icon={<UserGroupIcon className="xl:w-10 w-8 mb-2" />}
                     label="Users"

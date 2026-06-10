@@ -45,7 +45,20 @@ const fetchStudents = useCallback(async (search = '', gradelevel = '', strand = 
       .select('*', { count: 'exact' })
       .order('date_added', { ascending: false });
 
-    if (user.id !== 1) query = query.eq('adviser', user.id);
+    const userRole = (user.role || role || '').toLowerCase();
+
+    const isSuperAdmin = Number(user.id) === 1;
+
+    if (isSuperAdmin || userRole === 'admin') {
+      // Super admin and admins can view all students.
+    } else if (userRole === 'teacher') {
+      query = query.eq('adviser', user.id);
+    } else {
+      setStudents([]);
+      setResultsFound(0);
+      setTotalCount(0);
+      return;
+    }
 
     if (search) query = query.or(
       `lrn.ilike.%${search}%,firstname.ilike.%${search}%,lastname.ilike.%${search}%,middlename.ilike.%${search}%`
@@ -74,7 +87,7 @@ const fetchStudents = useCallback(async (search = '', gradelevel = '', strand = 
   } catch (err) {
     console.error('Error fetching students:', err);
   }
-}, [user]);
+}, [user, role]);
 
 
 useEffect(() => {

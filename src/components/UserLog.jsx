@@ -14,6 +14,20 @@ export default function LoginPage() {
     const [msg, setMsg] = useState('');
 
     const [showModal, setShowModal] = useState(false);
+    const [forgotModalOpen, setForgotModalOpen] = useState(false);
+    const [resetModalOpen, setResetModalOpen] = useState(false);
+    const [resetEmail, setResetEmail] = useState('');
+    const [forgotLoading, setForgotLoading] = useState(false);
+    const [forgotMsg, setForgotMsg] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [resetLoading, setResetLoading] = useState(false);
+    const [resetMsg, setResetMsg] = useState('');
+
+    const validatePassword = (value) => {
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+        return passwordRegex.test(value);
+    };
 
     const handleLogin = async () => {
         setLoading(true);
@@ -60,6 +74,84 @@ export default function LoginPage() {
         }
     };
 
+    const openForgotPassword = () => {
+        setResetEmail(email);
+        setForgotMsg('');
+        setForgotModalOpen(true);
+    };
+
+    const handleForgotPassword = async (e) => {
+        e.preventDefault();
+        setForgotLoading(true);
+        setForgotMsg('');
+
+        try {
+            const recoveryEmail = resetEmail.trim();
+
+            if (!recoveryEmail) {
+                setForgotMsg('Please enter your email address.');
+                return;
+            }
+
+            const redirectTo = `${window.location.origin}/login?reset=1`;
+            const { error } = await supabase.auth.resetPasswordForEmail(recoveryEmail, {
+                redirectTo,
+            });
+
+            if (error) throw error;
+
+            setForgotMsg('If that email exists, a password reset link has been sent.');
+        } catch (err) {
+            console.error('Password reset request error:', err);
+            setForgotMsg(err.message || 'Failed to send password reset email.');
+        } finally {
+            setForgotLoading(false);
+        }
+    };
+
+    const handleResetPassword = async (e) => {
+        e.preventDefault();
+        setResetLoading(true);
+        setResetMsg('');
+
+        try {
+            if (!newPassword || !confirmPassword) {
+                setResetMsg('Please complete both password fields.');
+                return;
+            }
+
+            if (!validatePassword(newPassword)) {
+                setResetMsg('Password must be at least 8 characters with uppercase, lowercase, and number.');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                setResetMsg('New password and confirm password do not match.');
+                return;
+            }
+
+            const { error } = await supabase.auth.updateUser({
+                password: newPassword,
+            });
+
+            if (error) throw error;
+
+            setResetMsg('Password changed successfully. You can now log in.');
+            setNewPassword('');
+            setConfirmPassword('');
+            await supabase.auth.signOut();
+            setTimeout(() => {
+                setResetModalOpen(false);
+                navigate('/login', { replace: true });
+            }, 1200);
+        } catch (err) {
+            console.error('Password reset error:', err);
+            setResetMsg(err.message || 'Failed to update password. Please request a new reset link.');
+        } finally {
+            setResetLoading(false);
+        }
+    };
+
         const CORRECT_PASSCODE = '301304'; // Set your passcode here
 
     const handlePasscodeConfirm = (passcode) => {
@@ -81,6 +173,27 @@ export default function LoginPage() {
 
         return () => {
             window.removeEventListener('beforeunload', clearPasscode);
+        };
+    }, []);
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const hasRecoveryQuery = params.get('reset') === '1';
+        const hasRecoveryHash = window.location.hash.includes('type=recovery');
+
+        if (hasRecoveryQuery || hasRecoveryHash) {
+            setResetModalOpen(true);
+        }
+
+        const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+            if (event === 'PASSWORD_RECOVERY') {
+                setResetModalOpen(true);
+                setResetMsg('');
+            }
+        });
+
+        return () => {
+            authListener.subscription.unsubscribe();
         };
     }, []);
 
@@ -113,9 +226,13 @@ export default function LoginPage() {
                             <input id='show-pass' type="checkbox" checked={showpass} onChange={() => setShowpass(!showpass)} /> Show Password
                         </label>
                     </div>
-                    <p className="mt-2 text-sm text-gray-500 italic">
-                        Forgot your password? Please contact your system administrator to reset it.
-                    </p>
+                    <button
+                        type="button"
+                        onClick={openForgotPassword}
+                        className="mt-2 text-sm text-blue-600 hover:underline"
+                    >
+                        Forgot your password?
+                    </button>
                 </div>
                 <div className='w-full flex flex-row gap-2'>
                     <button 
@@ -153,6 +270,102 @@ export default function LoginPage() {
                 message="Please enter the passcode to access signup"
                 showConfirm={true}
             />
+
+            {forgotModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4">
+                    <form onSubmit={handleForgotPassword} className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
+                        <h2 className="mb-2 text-xl font-bold text-sky-900">Reset Password</h2>
+                        <p className="mb-4 text-sm text-gray-600">
+                            Enter your account email and Supabase will send a password reset link.
+                        </p>
+                        <input
+                            className="mb-3 w-full rounded border border-gray-300 p-2"
+                            type="email"
+                            placeholder="Email address"
+                            value={resetEmail}
+                            onChange={(e) => setResetEmail(e.target.value)}
+                            disabled={forgotLoading}
+                            required
+                        />
+                        {forgotMsg && (
+                            <p className={`mb-3 text-sm ${forgotMsg.includes('sent') ? 'text-green-600' : 'text-red-600'}`}>
+                                {forgotMsg}
+                            </p>
+                        )}
+                        <div className="flex gap-2">
+                            <button
+                                type="submit"
+                                disabled={forgotLoading}
+                                className="flex-1 rounded bg-sky-700 px-4 py-2 text-white disabled:opacity-50"
+                            >
+                                {forgotLoading ? 'Sending...' : 'Send Link'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setForgotModalOpen(false)}
+                                disabled={forgotLoading}
+                                className="flex-1 rounded bg-gray-300 px-4 py-2 disabled:opacity-50"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
+
+            {resetModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4">
+                    <form onSubmit={handleResetPassword} className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
+                        <h2 className="mb-2 text-xl font-bold text-sky-900">Create New Password</h2>
+                        <p className="mb-4 text-sm text-gray-600">
+                            Enter a new password for your account.
+                        </p>
+                        <input
+                            className="mb-3 w-full rounded border border-gray-300 p-2"
+                            type="password"
+                            placeholder="New password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            disabled={resetLoading}
+                            required
+                        />
+                        <input
+                            className="mb-3 w-full rounded border border-gray-300 p-2"
+                            type="password"
+                            placeholder="Confirm new password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            disabled={resetLoading}
+                            required
+                        />
+                        {resetMsg && (
+                            <p className={`mb-3 text-sm ${resetMsg.includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>
+                                {resetMsg}
+                            </p>
+                        )}
+                        <div className="flex gap-2">
+                            <button
+                                type="submit"
+                                disabled={resetLoading}
+                                className="flex-1 rounded bg-sky-700 px-4 py-2 text-white disabled:opacity-50"
+                            >
+                                {resetLoading ? 'Saving...' : 'Save Password'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setResetModalOpen(false);
+                                    navigate('/login', { replace: true });
+                                }}
+                                disabled={resetLoading}
+                                className="flex-1 rounded bg-gray-300 px-4 py-2 disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
         </div>
     );
 }

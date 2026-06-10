@@ -245,7 +245,7 @@ useEffect(() => {
   const handleFetchSelected = async () => {
 
     if (!selectedRows || selectedRows.length === 0) {
-      setModalTitle("Generate ID");
+      setModalTitle("Please select student(s) to continue.");
       setModalMessage("Please select student(s) to continue.");
       setShowConfirm(false);
       setModalOpen(true);

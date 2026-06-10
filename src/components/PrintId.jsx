@@ -94,14 +94,12 @@ export default function PrintId() {
     }, [filteredStudents, qrCodes]);
 
     const strandMap = {
+        // TECHPRO: "Technical-Professional (TechPro) Track",
+        // ACAD: "Academic Track",
         ABM: "Accountancy, Business, & Management (ABM)",
-        STEM: "Science, Technology, Engineering, & Mathematics (STEM)",
         HUMSS: "Humanities & Social Sciences (HUMSS)",
-        GAS: "General Academic Strand (GAS)",
         HE: "Home Economics (HE)",
-        AFA: "Agri-Fishery Arts (AFA)",
         ICT: "Information & Communication Technology (ICT)",
-        IA: "Industrial Arts (IA)",
     };
 
     return (
@@ -200,15 +198,30 @@ export default function PrintId() {
 
                                         {isSHS ? (
                                             <div style={{ fontSize: '8px', lineHeight: '10px' }} className="flex flex-col justify-center h-[32px] w-40 text-black mt-3.5 text-center font-extrabold uppercase">
-                                            {student.strand === 'AFA' || student.strand === 'HE' || student.strand === 'ICT' || student.strand === 'IA' ? (
+                                            {student.strand === 'HE' || student.strand === 'ICT' ? (
                                                 <>
                                                     <p>{strandMap[student.strand]}</p>
                                                     <p style={{fontSize: '7px', marginTop: '2px'}} className="text-white font-bold">Technical-Vocational-Livelihood Track</p>
                                                 </>
+                                            ) : student.strand === 'TECHPRO' ? (
+                                                <>
+                                                    <p>{strandMap[student.strand]}</p>
+                                                    <p
+                                                        style={{ fontSize: '7px', marginTop: '2px' }}
+                                                        className="text-white font-bold"
+                                                    >
+                                                        Technical-Professional Track
+                                                    </p>
+                                                </>
                                             ) : (
                                                 <>
                                                     <p>{strandMap[student.strand]}</p>
-                                                    <p style={{fontSize: '7px', marginTop: '2px'}} className="text-white font-bold">Academic Track</p>
+                                                    <p
+                                                        style={{ fontSize: '7px', marginTop: '2px' }}
+                                                        className="text-white font-bold"
+                                                    >
+                                                        Academic Track
+                                                    </p>
                                                 </>
                                             )}
                                         </div>

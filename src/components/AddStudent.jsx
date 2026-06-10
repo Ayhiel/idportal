@@ -9,7 +9,7 @@ import { supabase } from './supabaseClient';
 // Function to add data to database
 export default function AddStudent() {
     // Get the user role
-    const { role } = useAuth();
+    const { role, user } = useAuth();
 
     // Setting up the signup form
     const [form, setForm] = useState({ lrn: '', lastname: '', firstname: '', middlename: '', parent: '', parentnumber: '', brgy: '', town: '', province: '', profile_url: '', gradelevel:'', strand: '' , section: '', adviser: ''});
@@ -25,6 +25,7 @@ export default function AddStudent() {
     const [profileFile, setProfileFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(DEFAULT_PROFILE);
     const [uploadedImageUrl, setUploadedImageUrl] = useState('');
+    const [originalStudent, setOriginalStudent] = useState(null);
 
     const [advisers, setAdvisers] = useState([]);
     const [adviserError, setAdviserError] = useState('');
@@ -32,7 +33,7 @@ export default function AddStudent() {
     // Opening Custom Modal
     const [modalOpen, setModalOpen] = useState(false);
     const [modalTitle, setModalTitle] = useState("");
-    const [modalMessage, setModalMessage] = useState("");
+    const [modalMessage] = useState("");
     const [isSuccess, setIsSuccess] = useState(false);
 
     // Image Capture and Cropping
@@ -139,21 +140,35 @@ export default function AddStudent() {
             .from("tblstudents")
             .select("*")
             .eq("id", studentid)
-            .maybeSingle();
+            .limit(1);
 
         if (error) return console.error("Failed to fetch student:", error);
 
-        if (data) {
-            const isSenior = data.gradelevel === "g11" || data.gradelevel === "g12";
+        const student = data?.[0];
+
+        if (student) {
+            const isSenior = student.gradelevel === "g11" || student.gradelevel === "g12";
             setIsSHS(isSenior);
+            setOriginalStudent(student);
             setForm({
-                ...data,
-                brgy: data.brgy || "",
-                town: data.town || "",
-                province: data.province || "",
+                ...student,
+                lrn: student.lrn || "",
+                lastname: student.lastname || "",
+                firstname: student.firstname || "",
+                middlename: student.middlename || "",
+                parent: student.parent || "",
+                parentnumber: student.parentnumber || "",
+                brgy: student.brgy || "",
+                town: student.town || "",
+                province: student.province || "",
+                gradelevel: student.gradelevel || "",
+                strand: student.strand || "",
+                section: student.section || "",
+                adviser: student.adviser ? String(student.adviser) : "",
+                profile_url: student.profile_url || "",
             });
 
-            setPreviewUrl(data.profile_url || DEFAULT_PROFILE);
+            setPreviewUrl(student.profile_url || DEFAULT_PROFILE);
         }
         };
         fetchStudent();
@@ -274,12 +289,30 @@ const brgy = addresses.length && form.province && form.town
         const currentLastname = form.lastname?.trim();
         const currentLRN = form.lrn?.trim();
 
+        if (studentid) {
+            const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+            if (sessionError) {
+                throw sessionError;
+            }
+
+            if (!sessionData.session || !user?.id) {
+                throw new Error('Your login session expired. Please log in again before updating this student.');
+            }
+        }
+
         // Check LRN uniqueness (skip if editing same student)
-        const { data: existing } = await supabase
+        const { data: existingStudents, error: existingError } = await supabase
             .from("tblstudents")
             .select("id")
             .eq("lrn", currentLRN)
-            .maybeSingle();
+            .limit(1);
+
+        if (existingError) {
+            throw existingError;
+        }
+
+        const existing = existingStudents?.[0];
 
         const existingId = existing?.id?.toString();
         const currentId = studentid?.toString();
@@ -305,6 +338,14 @@ const brgy = addresses.length && form.province && form.town
             const { data } = supabase.storage.from('id-profile').getPublicUrl(filename);
             return data.publicUrl;
         };
+
+        const originalLastname = originalStudent?.lastname?.trim();
+        const originalLRN = originalStudent?.lrn?.trim();
+        const identityChanged = Boolean(
+            studentid &&
+            originalStudent &&
+            (originalLastname !== currentLastname || originalLRN !== currentLRN)
+        );
 
         // 🔹 CASE 1: User uploaded a new profile image
         if (profileFile) {
@@ -334,7 +375,7 @@ const brgy = addresses.length && form.province && form.town
             finalProfileUrl = getPublicUrl(uniqueName);
         }
         // 🔹 CASE 2: No new upload, but LRN or lastname changed (rename existing file)
-        else if (form.profile_url && (form.lastname !== currentLastname || form.lrn !== currentLRN)) {
+        else if (form.profile_url && identityChanged) {
             
             try {
                 const url = new URL(form.profile_url);
@@ -405,14 +446,18 @@ const brgy = addresses.length && form.province && form.town
 
         // 🔹 Update existing student
         if (studentid) {
-            const { error: updateError } = await supabase
+            const { error: updateError, count: updatedCount } = await supabase
                 .from('tblstudents')
-                .update(studentData)
+                .update(studentData, { count: 'exact' })
                 .eq('id', studentid);
 
             if (updateError) {
                 console.error('Update error:', updateError);
                 throw updateError;
+            }
+
+            if (updatedCount === 0) {
+                throw new Error('No student record was updated. Please log in again, then check that your account has permission to edit this student.');
             }
 
             console.log('Student updated successfully');
@@ -455,6 +500,7 @@ const brgy = addresses.length && form.province && form.town
             setUploadedImageUrl(null);
             setShowUploadCrop(false);
             if (fileInputRef.current) fileInputRef.current.value = "";
+            setOriginalStudent(null);
         }
 
         setModalOpen(true);
@@ -465,8 +511,8 @@ const brgy = addresses.length && form.province && form.town
     } catch (err) {
         console.error('Submit error:', err);
         setModalOpen(true);
-        setModalTitle("Error!");
-        setModalMessage(err.message || "Failed to save student");
+        setModalTitle(err.message || "Failed to save student");
+        // setModalMessage(err.message || "Failed to save student");
     } finally {
         setLoadingSubmit(false);
     }
@@ -660,6 +706,10 @@ const deleteOldProfile = async (profileUrl) => {
                         <option value="">Select Strand</option>
                         <option value="ACAD">ACADEMIC</option>
                         <option value="TECHPRO">TECHPRO</option>
+                        <option value="ABM">Accountancy, Business, and Management (ABM)</option>
+                        <option value="HUMSS">Humanities and Social Sciences (HUMSS)</option>
+                        <option value="HE">Home Economics (HE)</option>
+                        <option value="ICT">Information and Communications Technology (ICT)</option>
                     </select>
                     {/* <select
                         value={form.section}

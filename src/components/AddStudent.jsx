@@ -573,7 +573,7 @@ const deleteOldProfile = async (profileUrl) => {
     }, [uploadedImageUrl]);
 
   return (
-    <div className='py-8 max-h-[100vh] overflow-auto'>
+    <div className='py-8 max-h-[100dvh] overflow-auto'>
         {loading ? (
         <div className="max-w-xl mx-auto h-[100vh] flex flex-col gap-2 items-center justify-center">
             <h4>Loading data... please wait...</h4>

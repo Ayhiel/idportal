@@ -62,6 +62,8 @@ export default function AddStudent() {
 
     const [isSHS, setIsSHS] = useState(false);
 
+    const [brightness, setBrightness] = useState(100);
+
     // Convert base64 to File
     const dataURLtoFile = (dataUrl, filename) => {
         const arr = dataUrl.split(",");
@@ -74,7 +76,7 @@ export default function AddStudent() {
 
 
     // Crop image
-    const createCroppedImage = (imageSrc, cropPixels) => {
+    const createCroppedImage = (imageSrc, cropPixels, brightnessValue = 100) => {
         return new Promise((resolve, reject) => {
         const image = new Image();
         image.crossOrigin = "anonymous";
@@ -83,6 +85,8 @@ export default function AddStudent() {
             canvas.width = cropPixels.width;
             canvas.height = cropPixels.height;
             const ctx = canvas.getContext("2d");
+            ctx.filter = `brightness(${brightnessValue}%)`;
+
             ctx.drawImage(
             image,
             cropPixels.x,
@@ -94,6 +98,8 @@ export default function AddStudent() {
             cropPixels.width,
             cropPixels.height
             );
+
+            ctx.filter = "none";
             resolve(canvas.toDataURL("image/png"));
         };
         image.onerror = reject;
@@ -266,7 +272,7 @@ const brgy = addresses.length && form.province && form.town
     const getCroppedImage = async () => {
         if (!croppedAreaPixels || !capturedDataUrl) return;
         try {
-        const cropped = await createCroppedImage(capturedDataUrl, croppedAreaPixels);
+        const cropped = await createCroppedImage(capturedDataUrl, croppedAreaPixels, brightness);
         setPreviewUrl(cropped);
         setProfileFile(dataURLtoFile(cropped, `${form.lastname}_${form.lrn}.png`));
         setShowPreview(false);
@@ -828,13 +834,18 @@ const deleteOldProfile = async (profileUrl) => {
                             {/* Cropper Area */}
                             <div className="w-full h-[600px] relative">
                                 <Cropper
-                                image={uploadedImageUrl}
-                                crop={crop}
-                                zoom={zoom}
-                                aspect={1}
-                                onCropChange={setCrop}
-                                onZoomChange={setZoom}
-                                onCropComplete={onCropComplete}
+                                    image={uploadedImageUrl}
+                                    crop={crop}
+                                    zoom={zoom}
+                                    aspect={1}
+                                    onCropChange={setCrop}
+                                    onZoomChange={setZoom}
+                                    onCropComplete={onCropComplete}
+                                    style={{
+                                        mediaStyle: {
+                                        filter: `brightness(${brightness}%)`
+                                        }
+                                    }}
                                 />
                             </div>
 
@@ -852,6 +863,21 @@ const deleteOldProfile = async (profileUrl) => {
                                 />
                             </div>
 
+                            <div className="w-full mt-4 px-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1 text-center">
+                                    Brightness ({brightness}%)
+                                </label>
+                                <input
+                                    type="range"
+                                    min={50}
+                                    max={200}
+                                    step={1}
+                                    value={brightness}
+                                    onChange={(e) => setBrightness(Number(e.target.value))}
+                                    className="w-full"
+                                />
+                            </div>
+
                             {/* Action Buttons */}
                             <div className="mt-6 flex justify-center gap-4">
                                 <button
@@ -860,7 +886,7 @@ const deleteOldProfile = async (profileUrl) => {
                                         if (!croppedAreaPixels) return;
 
                                         try {
-                                            const cropped = await createCroppedImage(uploadedImageUrl, croppedAreaPixels, 1000);
+                                            const cropped = await createCroppedImage(uploadedImageUrl, croppedAreaPixels, brightness, 1000);
                                             const finalImage = cropped;
 
                                             setPreviewUrl(finalImage);
@@ -905,13 +931,18 @@ const deleteOldProfile = async (profileUrl) => {
                             {/* Cropper Area */}
                             <div className="w-full h-[600px] relative">
                                 <Cropper
-                                image={capturedDataUrl}
-                                crop={crop}
-                                zoom={zoom}
-                                aspect={1} // square crop
-                                onCropChange={setCrop}
-                                onZoomChange={setZoom}
-                                onCropComplete={onCropComplete}
+                                    image={uploadedImageUrl}
+                                    crop={crop}
+                                    zoom={zoom}
+                                    aspect={1}
+                                    onCropChange={setCrop}
+                                    onZoomChange={setZoom}
+                                    onCropComplete={onCropComplete}
+                                    style={{
+                                        mediaStyle: {
+                                        filter: `brightness(${brightness}%)`
+                                        }
+                                    }}
                                 />
                             </div>
 
@@ -926,6 +957,21 @@ const deleteOldProfile = async (profileUrl) => {
                                 value={zoom}
                                 onChange={(e) => setZoom(Number(e.target.value))}
                                 className="w-full"
+                                />
+                            </div>
+
+                            <div className="w-full mt-4 px-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1 text-center">
+                                    Brightness ({brightness}%)
+                                </label>
+                                <input
+                                    type="range"
+                                    min={50}
+                                    max={200}
+                                    step={1}
+                                    value={brightness}
+                                    onChange={(e) => setBrightness(Number(e.target.value))}
+                                    className="w-full"
                                 />
                             </div>
 

@@ -76,7 +76,7 @@ export default function AddStudent() {
 
 
     // Crop image
-    const createCroppedImage = (imageSrc, cropPixels, brightnessValue = 100) => {
+    const createCroppedImage = (imageSrc, cropPixels, brightnessValue=100) => {
         return new Promise((resolve, reject) => {
         const image = new Image();
         image.crossOrigin = "anonymous";
@@ -88,15 +88,15 @@ export default function AddStudent() {
             ctx.filter = `brightness(${brightnessValue}%)`;
 
             ctx.drawImage(
-            image,
-            cropPixels.x,
-            cropPixels.y,
-            cropPixels.width,
-            cropPixels.height,
-            0,
-            0,
-            cropPixels.width,
-            cropPixels.height
+                image,
+                cropPixels.x,
+                cropPixels.y,
+                cropPixels.width,
+                cropPixels.height,
+                0,
+                0,
+                cropPixels.width,
+                cropPixels.height
             );
 
             ctx.filter = "none";
@@ -931,7 +931,7 @@ const deleteOldProfile = async (profileUrl) => {
                             {/* Cropper Area */}
                             <div className="w-full h-[600px] relative">
                                 <Cropper
-                                    image={uploadedImageUrl}
+                                    image={capturedDataUrl}
                                     crop={crop}
                                     zoom={zoom}
                                     aspect={1}

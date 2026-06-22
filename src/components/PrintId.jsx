@@ -3,10 +3,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 import { BackwardIcon, ForwardIcon } from '@heroicons/react/24/solid';
 import QRCode from 'qrcode';
+import { useAuth } from './AuthContext';
 
 export default function PrintId() {
     const location = useLocation();
     const navigate = useNavigate();
+    const { role } = useAuth();
 
     const printRef = useRef();
     const [allStudents, setAllStudents] = useState([]);
@@ -283,20 +285,22 @@ export default function PrintId() {
                                         {student.parentnumber}
                                     </p>
 
-                                    {/* Address */}
-                                    <div
-                                        className="text-center whitespace-normal break-words flex items-center justify-center"
-                                        style={{
-                                            width: '100%',
-                                            fontSize: '9px',
-                                            lineHeight: '8px',
-                                            height: '10mm',
-                                            position: 'relative',
-                                            bottom: '4.7mm'
-                                        }}
-                                    >
-                                        <p className="w-11/12">{`Brgy. ${student.brgy}, ${student.town}, ${student.province}`}</p>
-                                    </div>
+                                    {/* Address (admin-only) */}
+                                    {role === 'admin' && (
+                                        <div
+                                            className="text-center whitespace-normal break-words flex items-center justify-center"
+                                            style={{
+                                                width: '100%',
+                                                fontSize: '9px',
+                                                lineHeight: '8px',
+                                                height: '10mm',
+                                                position: 'relative',
+                                                bottom: '4.7mm'
+                                            }}
+                                        >
+                                            <p className="w-11/12">{`Brgy. ${student.brgy}, ${student.town}, ${student.province}`}</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}

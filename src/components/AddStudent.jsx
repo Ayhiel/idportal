@@ -144,15 +144,25 @@ export default function AddStudent() {
     };
 
 
-    // Crop image
-    const createCroppedImage = (imageSrc, cropPixels, brightnessValue=100) => {
+    // Crop image (optionally downscaled to maxDimension on its longest side,
+    // so high-resolution mobile camera photos don't produce huge canvases)
+    const createCroppedImage = (imageSrc, cropPixels, brightnessValue=100, maxDimension=null) => {
         return new Promise((resolve, reject) => {
         const image = new Image();
         image.crossOrigin = "anonymous";
         image.onload = () => {
+            let targetWidth = cropPixels.width;
+            let targetHeight = cropPixels.height;
+
+            if (maxDimension && Math.max(targetWidth, targetHeight) > maxDimension) {
+                const scale = maxDimension / Math.max(targetWidth, targetHeight);
+                targetWidth = Math.round(targetWidth * scale);
+                targetHeight = Math.round(targetHeight * scale);
+            }
+
             const canvas = document.createElement("canvas");
-            canvas.width = cropPixels.width;
-            canvas.height = cropPixels.height;
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
             const ctx = canvas.getContext("2d");
             ctx.filter = `brightness(${brightnessValue}%)`;
 
@@ -164,8 +174,8 @@ export default function AddStudent() {
                 cropPixels.height,
                 0,
                 0,
-                cropPixels.width,
-                cropPixels.height
+                targetWidth,
+                targetHeight
             );
 
             ctx.filter = "none";

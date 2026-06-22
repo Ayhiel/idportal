@@ -63,6 +63,75 @@ export default function AddStudent() {
     const [isSHS, setIsSHS] = useState(false);
 
     const [brightness, setBrightness] = useState(100);
+    const [removingBg, setRemovingBg] = useState(false);
+
+    const BG_REMOVAL_API_URL = process.env.REACT_APP_BG_REMOVAL_API_URL || 'http://localhost:8000';
+
+    // Send the cropped photo to the background-removal service and return
+    // a transparent-background PNG data URL (falls back to the original on failure)
+    const removeImageBackground = async (dataUrl) => {
+        try {
+            const sourceBlob = await (await fetch(dataUrl)).blob();
+            const formData = new FormData();
+            formData.append('file', sourceBlob, 'photo.png');
+
+            const response = await fetch(`${BG_REMOVAL_API_URL}/remove-bg`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) throw new Error(`Background removal failed (${response.status})`);
+
+            const resultBlob = await response.blob();
+            return await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(resultBlob);
+            });
+        } catch (err) {
+            console.error('Background removal failed, using original photo:', err);
+            return dataUrl;
+        }
+    };
+
+    const MAX_PROFILE_IMAGE_BYTES = 1024 * 1024; // 1MB
+
+    // Estimate the decoded byte size of a data URL from its base64 payload
+    const dataUrlByteSize = (dataUrl) => {
+        const base64 = dataUrl.split(',')[1] || '';
+        return Math.ceil((base64.length * 3) / 4);
+    };
+
+    // Downscale the (PNG, to keep transparency) image until it fits under
+    // maxBytes; leaves it untouched if it's already within the limit
+    const compressToMaxSize = async (dataUrl, maxBytes = MAX_PROFILE_IMAGE_BYTES) => {
+        if (dataUrlByteSize(dataUrl) <= maxBytes) return dataUrl;
+
+        const image = await new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = dataUrl;
+        });
+
+        let width = image.naturalWidth;
+        let height = image.naturalHeight;
+        let result = dataUrl;
+
+        for (let attempt = 0; attempt < 10 && dataUrlByteSize(result) > maxBytes; attempt++) {
+            width = Math.round(width * 0.85);
+            height = Math.round(height * 0.85);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext('2d').drawImage(image, 0, 0, width, height);
+            result = canvas.toDataURL('image/png');
+        }
+
+        return result; // best effort if still over the limit
+    };
 
     // Convert base64 to File
     const dataURLtoFile = (dataUrl, filename) => {
@@ -273,11 +342,16 @@ const brgy = addresses.length && form.province && form.town
         if (!croppedAreaPixels || !capturedDataUrl) return;
         try {
         const cropped = await createCroppedImage(capturedDataUrl, croppedAreaPixels, brightness);
-        setPreviewUrl(cropped);
-        setProfileFile(dataURLtoFile(cropped, `${form.lastname}_${form.lrn}.png`));
         setShowPreview(false);
+        setRemovingBg(true);
+        const bgRemoved = await removeImageBackground(cropped);
+        const finalImage = await compressToMaxSize(bgRemoved);
+        setPreviewUrl(finalImage);
+        setProfileFile(dataURLtoFile(finalImage, `${form.lastname}_${form.lrn}.png`));
         } catch (err) {
         console.error("Cropping failed:", err);
+        } finally {
+        setRemovingBg(false);
         }
     };
 
@@ -754,11 +828,18 @@ const deleteOldProfile = async (profileUrl) => {
                 {(role === 'admin' || role === 'teacher') &&
                     <div className="mb-4 flex flex-row items-center gap-2">
                      {/* Preview Image */}
-                    <img
-                        src={previewUrl}
-                        alt="Profile"
-                        className="w-24 h-24 object-cover rounded border border-gray-400"
-                    />
+                    <div className="relative w-24 h-24 shrink-0">
+                        <img
+                            src={previewUrl}
+                            alt="Profile"
+                            className="w-24 h-24 object-cover rounded border border-gray-400"
+                        />
+                        {removingBg && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded">
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                            </div>
+                        )}
+                    </div>
 
                     {/* File Input */}
                     <div className="flex flex-col gap-2 w-full">
@@ -887,7 +968,10 @@ const deleteOldProfile = async (profileUrl) => {
 
                                         try {
                                             const cropped = await createCroppedImage(uploadedImageUrl, croppedAreaPixels, brightness, 1000);
-                                            const finalImage = cropped;
+                                            setShowUploadCrop(false);
+                                            setRemovingBg(true);
+                                            const bgRemoved = await removeImageBackground(cropped);
+                                            const finalImage = await compressToMaxSize(bgRemoved);
 
                                             setPreviewUrl(finalImage);
                                             setProfileFile(
@@ -896,11 +980,12 @@ const deleteOldProfile = async (profileUrl) => {
                                                     `${form.lastname?.toUpperCase()}_${form.lrn}.png`
                                                 )
                                             );
-                                            setShowUploadCrop(false);
                                             URL.revokeObjectURL(uploadedImageUrl);
                                             setUploadedImageUrl('');
                                         } catch (error) {
                                             console.error("Upload crop failed:", error);
+                                        } finally {
+                                            setRemovingBg(false);
                                         }
                                     }}
                                     className="bg-green-600 text-white px-4 py-2 rounded"
@@ -999,10 +1084,10 @@ const deleteOldProfile = async (profileUrl) => {
                 </div>
                 }
                 
-                <button 
-                    className="w-full bg-sky-700 hover:bg-sky-600 text-white p-4 mt-4 rounded uppercase disabled:opacity-50" 
+                <button
+                    className="w-full bg-sky-700 hover:bg-sky-600 text-white p-4 mt-4 rounded uppercase disabled:opacity-50"
                     type="submit"
-                    disabled={loadingSubmit}
+                    disabled={loadingSubmit || removingBg}
                 >
                     {loadingSubmit ? (
                         <div className="flex items-center justify-center gap-2">

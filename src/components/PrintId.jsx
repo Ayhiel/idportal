@@ -295,7 +295,7 @@ export default function PrintId() {
                                             bottom: '4.7mm'
                                         }}
                                     >
-                                        <p className="w-11/12">{student.address}</p>
+                                        <p className="w-11/12">{`Brgy. ${student.brgy}, ${student.town}, ${student.province}`}</p>
                                     </div>
                                 </div>
                             </div>

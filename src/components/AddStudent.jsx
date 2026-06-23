@@ -95,7 +95,7 @@ export default function AddStudent() {
         }
     };
 
-    const MAX_PROFILE_IMAGE_BYTES = 1024 * 1024; // 1MB
+    const MAX_PROFILE_IMAGE_BYTES = 700 * 1024; // 700KB
 
     // Estimate the decoded byte size of a data URL from its base64 payload
     const dataUrlByteSize = (dataUrl) => {
@@ -451,9 +451,10 @@ const brgy = addresses.length && form.province && form.town
 
             const { error: uploadError } = await supabase.storage
                 .from('id-profile')
-                .upload(uniqueName, profileFile, { 
+                .upload(uniqueName, profileFile, {
                     upsert: false,
-                    contentType: profileFile.type 
+                    contentType: profileFile.type,
+                    cacheControl: '31536000' // filenames are unique per upload, so cache for 1 year
                 });
 
             if (uploadError) {
@@ -489,7 +490,10 @@ const brgy = addresses.length && form.province && form.town
                 // Upload with new name
                 const { error: uploadError } = await supabase.storage
                     .from('id-profile')
-                    .upload(newFileName, fileData, { upsert: false });
+                    .upload(newFileName, fileData, {
+                        upsert: false,
+                        cacheControl: '31536000' // filenames are unique per upload, so cache for 1 year
+                    });
 
                 if (uploadError) {
                     console.error('Upload error:', uploadError);

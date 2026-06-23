@@ -74,17 +74,8 @@ const fetchStudents = useCallback(async (search = '', gradelevel = '', strand = 
     const { data, error, count } = await query;
     if (error) throw error;
 
-    const studentsWithImages = await Promise.all(
-      data.map(async student => {
-        if (student.profile_url) {
-          const { data: urlData } = supabase.storage.from('id-profile').getPublicUrl(student.profile_url);
-          return { ...student, profileUrl: urlData.publicUrl };
-        }
-        return student;
-      })
-    );
-
-    setStudents(studentsWithImages);
+    // student.profile_url is already a full public URL from upload time
+    setStudents(data);
     setResultsFound(search || gradelevel || strand || section || adviser ? count : null);
     setTotalCount(search || gradelevel || strand || section || adviser ? null : count);
 
@@ -261,27 +252,11 @@ useEffect(() => {
 
       if (error) throw error;
 
-      // Get profile picture URLs
-      const studentsWithImages = await Promise.all(
-        data.map(async (student) => {
-          if (student.profile) {
-            const { data: urlData } = supabase.storage
-              .from('id-profile')
-              .getPublicUrl(student.profile_url);
-            
-            return {
-              ...student,
-              profileUrl: urlData.publicUrl
-            };
-          }
-          return student;
-        })
-      );
-
+      // student.profile_url is already a full public URL from upload time
       navigate("/students/printid", {
         state: {
           ids: selectedRows,
-          students: studentsWithImages
+          students: data
         }
       });
     } catch (err) {

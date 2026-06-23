@@ -113,14 +113,12 @@ useEffect(() => {
               onChange={(e) => setStrand(e.target.value)}
             >
               <option value="">-- Filter by Strand --</option>
+              <option value="BAE">Business and Entrepreneurship (BAE)</option>
+              <option value="ASSH">Arts, Social Sciences, and Humanities (ASSH)</option>
               <option value="ABM">Accountancy, Business, and Management (ABM)</option>
-              <option value="STEM">Science, Technology, Engineering, and Mathematics (STEM)</option>
               <option value="HUMSS">Humanities and Social Sciences (HUMSS)</option>
-              <option value="GAS">General Academic Strand (GAS)</option>
               <option value="HE">Home Economics (HE)</option>
-              <option value="AFA">Agri-Fishery Arts (AFA)</option>
-              <option value="ICT">Information and Communications Technology (ICT)</option>
-              <option value="IA">Industrial Arts (IA)</option>
+              <option value="ICT">Information and Communication Technology (ICT)</option>
             </select>
             <select
               value={section}

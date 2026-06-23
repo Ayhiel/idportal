@@ -647,7 +647,28 @@ const deleteOldProfile = async (profileUrl) => {
     const handleCloseModal = () => {
         setModalOpen(false);
         if (isSuccess && studentid && navigate) {
-            navigate("/students");
+            // Restore the filters that were active before editing (saved by
+            // StudentList's handleEdit) so going back doesn't reset the list
+            const savedFilters = localStorage.getItem('student-filters');
+            if (savedFilters) {
+                try {
+                    const { search, gradelevel, strand, section, adviser, page } = JSON.parse(savedFilters);
+                    const params = new URLSearchParams();
+                    if (search) params.set('search', search);
+                    if (gradelevel) params.set('gradelevel', gradelevel);
+                    if (strand) params.set('strand', strand);
+                    if (section) params.set('section', section);
+                    if (adviser) params.set('adviser', adviser);
+                    if (page) params.set('page', page);
+                    const query = params.toString();
+                    navigate(query ? `/students?${query}` : "/students");
+                } catch (err) {
+                    console.error('Failed to restore student filters:', err);
+                    navigate("/students");
+                }
+            } else {
+                navigate("/students");
+            }
         }
         setIsSuccess(false);
     };
@@ -773,6 +794,7 @@ const deleteOldProfile = async (profileUrl) => {
                         updatedField('gradelevel', value);
                         if(value === "g11" || value === "g12") {
                             setIsSHS(true);
+                            updatedField('strand', "");
                         } else {
                             setIsSHS(false);
                             updatedField('strand', "---");
@@ -798,12 +820,22 @@ const deleteOldProfile = async (profileUrl) => {
                         required={isSHS}
                     >
                         <option value="">Select Strand</option>
-                        <option value="ACAD">ACADEMIC</option>
-                        <option value="TECHPRO">TECHPRO</option>
-                        <option value="ABM">Accountancy, Business, and Management (ABM)</option>
-                        <option value="HUMSS">Humanities and Social Sciences (HUMSS)</option>
-                        <option value="HE">Home Economics (HE)</option>
-                        <option value="ICT">Information and Communications Technology (ICT)</option>
+                        {form.gradelevel === 'g11' && (
+                            <>
+                                <option value="BAE">Business and Entrepreneurship (BAE)</option>
+                                <option value="ASSH">Arts, Social Sciences, and Humanities (ASSH)</option>
+                                <option value="ICT">Information and Communication Technology (ICT)</option>
+                                <option value="HE">Home Economics (HE)</option>
+                            </>
+                        )}
+                        {form.gradelevel === 'g12' && (
+                            <>
+                                <option value="ABM">Accountancy, Business, and Management (ABM)</option>
+                                <option value="HUMSS">Humanities and Social Sciences (HUMSS)</option>
+                                <option value="ICT">Information and Communication Technology (ICT)</option>
+                                <option value="HE">Home Economics (HE)</option>
+                            </>
+                        )}
                     </select>
                     {/* <select
                         value={form.section}

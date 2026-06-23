@@ -95,13 +95,32 @@ export default function PrintId() {
         return () => { isCancelled = true; };
     }, [filteredStudents, qrCodes]);
 
+    // \n forces a manual line break (rendered via whiteSpace: 'pre-line' below)
+    // for the longer strand names so they wrap at a sensible word boundary
     const strandMap = {
-        TECHPRO: "Technical-Professional Track",
-        ACAD: "Academic Track",
-        ABM: "Accountancy, Business, & Management (ABM)",
-        HUMSS: "Humanities & Social Sciences (HUMSS)",
+        BAE: "Business and Entrepreneurship (BAE)",
+        ASSH: "Arts, Social Sciences, and\nHumanities (ASSH)",
+        ABM: "Accountancy, Business, and\nManagement (ABM)",
+        HUMSS: "Humanities and Social\nSciences (HUMSS)",
         HE: "Home Economics (HE)",
-        ICT: "Information & Communication Technology (ICT)",
+        ICT: "Information and Communication\nTechnology (ICT)",
+    };
+
+    // Strand codes are shared across grade 11/12 (ICT, HE) but map to a
+    // different track depending on grade level, so the track label needs both.
+    const trackMap = {
+        g11: { BAE: "Academic Track", ASSH: "Academic Track", ICT: "Technical-Professional Track", HE: "Technical-Professional Track" },
+        g12: { ABM: "Academic Track", HUMSS: "Academic Track", ICT: "Technical-Vocational-Livelihood Track", HE: "Technical-Vocational-Livelihood Track" },
+    };
+
+    // Strand labels vary a lot in length, so shrink the text (based on its
+    // longest line) to keep it inside the fixed-height box
+    const strandLabelStyle = (label = '') => {
+        const longestLine = label.split('\n').reduce((max, line) => Math.max(max, line.length), 0);
+        const style = { whiteSpace: 'pre-line' };
+        if (longestLine > 30) return { ...style, fontSize: '6px', lineHeight: '7px' };
+        if (longestLine > 22) return { ...style, fontSize: '7px', lineHeight: '8px' };
+        return { ...style, fontSize: '8px', lineHeight: '9px' };
     };
 
     return (
@@ -211,29 +230,11 @@ export default function PrintId() {
 
                                         {isSHS ? (
                                             <div style={{ fontSize: '8px', lineHeight: '10px' }} className="flex flex-col justify-center h-[32px] w-40 text-black mt-3.5 text-center font-extrabold uppercase">
-                                            {student.strand === 'HE' || student.strand === 'ICT' ? (
-                                                <>
-                                                    <p>{strandMap[student.strand]}</p>
-                                                    <p style={{fontSize: '7px', marginTop: '2px'}} className="text-white font-bold">Technical-Vocational-Livelihood Track</p>
-                                                </>
-                                            ) : student.strand === 'TECHPRO' ? (
-                                                <>
-                                                    <p>{strandMap[student.strand]}</p>
-                                                </>
-                                            ) : student.strand === 'ACAD' ? (
-                                                <>
-                                                    <p>{strandMap[student.strand]}</p>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <p>{strandMap[student.strand]}</p>
-                                                    <p
-                                                        style={{ fontSize: '7px', marginTop: '2px' }}
-                                                        className="text-white font-bold"
-                                                    >
-                                                        Academic Track
-                                                    </p>
-                                                </>
+                                            <p style={strandLabelStyle(strandMap[student.strand])}>{strandMap[student.strand]}</p>
+                                            {trackMap[student.gradelevel]?.[student.strand] && (
+                                                <p style={{ fontSize: '7px', marginTop: '2px' }} className="text-white font-bold">
+                                                    {trackMap[student.gradelevel][student.strand]}
+                                                </p>
                                             )}
                                         </div>
                                         ):(
@@ -295,7 +296,7 @@ export default function PrintId() {
                                                 lineHeight: '8px',
                                                 height: '10mm',
                                                 position: 'relative',
-                                                bottom: '4.7mm'
+                                                bottom: '4.9mm'
                                             }}
                                         >
                                             <p className="w-11/12">{`Brgy. ${student.brgy}, ${student.town}, ${student.province}`}</p>

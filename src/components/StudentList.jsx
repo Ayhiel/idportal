@@ -116,12 +116,14 @@ useEffect(() => {
   const str = params.get('strand') || '';
   const sec = params.get('section') || '';
   const adv = params.get('adviser') || '';
+  const page = params.get('page') || '';
 
   setSearchTerm(search);
   setGradeLevel(grade);
   setStrand(str);
   setSection(sec);
   setAdviser(adv);
+  setPageIndex(page ? Math.max(Number(page) - 1, 0) : 0);
 
   // Fetch students immediately
   fetchStudents(search, grade, str, sec, adv);
@@ -162,6 +164,7 @@ useEffect(() => {
         strand,
         section,
         adviser,
+        page: pageIndex + 1,
       })
     );
     navigate(`/signup?id=${id}`);
@@ -300,7 +303,7 @@ useEffect(() => {
             className="text-xs lg:text-sm w-full border border-gray-400 p-2 py-3 rounded"
             placeholder="Type LRN or name here"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => { setSearchTerm(e.target.value); setPageIndex(0); }}
           />
         </div>
         {role === 'admin' && (
@@ -309,7 +312,7 @@ useEffect(() => {
               <select
                 value={gradelevel}
                 className="w-full flex-1 text-xs lg:text-sm p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                onChange={(e) => setGradeLevel(e.target.value)}
+                onChange={(e) => { setGradeLevel(e.target.value); setPageIndex(0); }}
               >
                 <option value="">by Grade Level</option>
                 <option value="g7">Grade 7</option>
@@ -323,21 +326,21 @@ useEffect(() => {
               <select
                 value={strand}
                 className="w-full flex-1 text-xs lg:text-sm p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                onChange={(e) => setStrand(e.target.value)}
+                onChange={(e) => { setStrand(e.target.value); setPageIndex(0); }}
               >
                 <option value="">by Strand</option>
-                <option value="ACAD">Academic</option>
-                <option value="TECHPRO">Technical-Professional</option>
+                <option value="BAE">Business and Entrepreneurship (BAE)</option>
+                <option value="ASSH">Arts, Social Sciences, and Humanities (ASSH)</option>
                 <option value="ABM">Accountancy, Business, and Management (ABM)</option>
                 <option value="HUMSS">Humanities and Social Sciences (HUMSS)</option>
                 <option value="HE">Home Economics (HE)</option>
-                <option value="ICT">Information and Communications Technology (ICT)</option>
+                <option value="ICT">Information and Communication Technology (ICT)</option>
               </select>
 
               <select
               value={adviser}
               className="w-full flex-1 text-xs lg:text-sm p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-              onChange={(e) => setAdviser(e.target.value)}
+              onChange={(e) => { setAdviser(e.target.value); setPageIndex(0); }}
             >
               <option value="">{adviserLoading ? 'Loading advisers...' : 'by Adviser'}</option>
               {!adviserLoading && advisers.length === 0 && (

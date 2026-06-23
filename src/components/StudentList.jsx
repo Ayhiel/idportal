@@ -255,6 +255,19 @@ useEffect(() => {
 
       if (error) throw error;
 
+      // Save filters/page so the Close button on the Print page can restore them
+      localStorage.setItem(
+        'student-filters',
+        JSON.stringify({
+          search: searchTerm,
+          gradelevel,
+          strand,
+          section,
+          adviser,
+          page: pageIndex + 1,
+        })
+      );
+
       // student.profile_url is already a full public URL from upload time
       navigate("/students/printid", {
         state: {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 import { BackwardIcon, ForwardIcon } from '@heroicons/react/24/solid';
@@ -20,11 +20,35 @@ export default function PrintId() {
         return location.state?.ids || [];
     }, [location.state?.ids]);
 
+    // Restore the filters/page that were active on the student list (saved by
+    // StudentList before navigating here) instead of resetting to a bare list
+    const goToStudentsList = useCallback((options) => {
+        const savedFilters = localStorage.getItem('student-filters');
+        if (savedFilters) {
+            try {
+                const { search, gradelevel, strand, section, adviser, page } = JSON.parse(savedFilters);
+                const params = new URLSearchParams();
+                if (search) params.set('search', search);
+                if (gradelevel) params.set('gradelevel', gradelevel);
+                if (strand) params.set('strand', strand);
+                if (section) params.set('section', section);
+                if (adviser) params.set('adviser', adviser);
+                if (page) params.set('page', page);
+                const query = params.toString();
+                navigate(query ? `/students?${query}` : "/students", options);
+                return;
+            } catch (err) {
+                console.error('Failed to restore student filters:', err);
+            }
+        }
+        navigate("/students", options);
+    }, [navigate]);
+
     useEffect(() => {
         if (selectedIds.length === 0) {
-            navigate("/students");
+            goToStudentsList();
         }
-    }, [selectedIds, navigate]);
+    }, [selectedIds, goToStudentsList]);
 
     useEffect(() => {
         if (selectedIds.length === 0) return;
@@ -118,8 +142,8 @@ export default function PrintId() {
     const strandLabelStyle = (label = '') => {
         const longestLine = label.split('\n').reduce((max, line) => Math.max(max, line.length), 0);
         const style = { whiteSpace: 'pre-line' };
-        if (longestLine > 30) return { ...style, fontSize: '6px', lineHeight: '7px' };
-        if (longestLine > 22) return { ...style, fontSize: '7px', lineHeight: '8px' };
+        if (longestLine > 30) return { ...style, fontSize: '7px', lineHeight: '7px' };
+        if (longestLine > 22) return { ...style, fontSize: '7.5px', lineHeight: '8px' };
         return { ...style, fontSize: '8px', lineHeight: '9px' };
     };
 
@@ -159,7 +183,7 @@ export default function PrintId() {
                         Print ID Cards
                     </button>
                     <button
-                        onClick={() => navigate('/students', { replace: true })}
+                        onClick={() => goToStudentsList({ replace: true })}
                         className="no-print px-4 py-2 bg-gray-500 hover:bg-gray-400 text-white rounded"
                     >
                         Close

@@ -27,6 +27,7 @@ export default function StudentList() {
   const [strand, setStrand] = useState('');
   const [section, setSection] = useState('');
   const [adviser, setAdviser] = useState('');
+  const [claimed, setClaimed] = useState('');
   const [advisers, setAdvisers] = useState([]);
   const [adviserLoading, setAdviserLoading] = useState(false);
 
@@ -37,7 +38,7 @@ export default function StudentList() {
   const [selectAllRows, setSelectAllRows] = useState(false);
 
 
-const fetchStudents = useCallback(async (search = '', gradelevel = '', strand = '', section = '', adviser = '', sort = 'date_added_desc') => {
+const fetchStudents = useCallback(async (search = '', gradelevel = '', strand = '', section = '', adviser = '', sort = 'date_added_desc', claimedFilter = '') => {
   if (!user?.id) {
     console.warn('No user logged in yet.');
     return;
@@ -74,14 +75,17 @@ const fetchStudents = useCallback(async (search = '', gradelevel = '', strand = 
     if (strand) query = query.eq('strand', strand);
     if (section) query = query.eq('section', section);
     if (adviser) query = query.eq('adviser', Number(adviser));
+    if (claimedFilter === '1') query = query.eq('claimed', 1);
+    else if (claimedFilter === '0') query = query.or('claimed.eq.0,claimed.is.null');
 
     const { data, error, count } = await query;
     if (error) throw error;
 
     // student.profile_url is already a full public URL from upload time
     setStudents(data);
-    setResultsFound(search || gradelevel || strand || section || adviser ? count : null);
-    setTotalCount(search || gradelevel || strand || section || adviser ? null : count);
+    const hasFilter = search || gradelevel || strand || section || adviser || claimedFilter !== '';
+    setResultsFound(hasFilter ? count : null);
+    setTotalCount(hasFilter ? null : count);
 
   } catch (err) {
     console.error('Error fetching students:', err);
@@ -122,17 +126,19 @@ useEffect(() => {
   const adv = params.get('adviser') || '';
   const page = params.get('page') || '';
   const sort = params.get('sort') || 'date_added_desc';
+  const clm = params.get('claimed') || '';
 
   setSearchTerm(search);
   setGradeLevel(grade);
   setStrand(str);
   setSection(sec);
   setAdviser(adv);
+  setClaimed(clm);
   setSortOrder(sort);
   setPageIndex(page ? Math.max(Number(page) - 1, 0) : 0);
 
   // Fetch students immediately
-  fetchStudents(search, grade, str, sec, adv, sort);
+  fetchStudents(search, grade, str, sec, adv, sort, clm);
 
 }, [fetchStudents, location.search, user]);
 
@@ -147,11 +153,11 @@ useEffect(() => {
   if (!user) return; // <-- important!
 
   const delayDebounce = setTimeout(() => {
-    fetchStudents(searchTerm, gradelevel, strand, section, adviser, sortOrder);
+    fetchStudents(searchTerm, gradelevel, strand, section, adviser, sortOrder, claimed);
   }, 300);
 
   return () => clearTimeout(delayDebounce);
-}, [fetchStudents, searchTerm, gradelevel, strand, section, adviser, sortOrder, user]);
+}, [fetchStudents, searchTerm, gradelevel, strand, section, adviser, sortOrder, claimed, user]);
 
 
 
@@ -171,6 +177,7 @@ useEffect(() => {
         section,
         adviser,
         sort: sortOrder,
+        claimed,
         page: pageIndex + 1,
       })
     );
@@ -218,7 +225,7 @@ useEffect(() => {
 
         setShowConfirm(false);
         setModalOpen(false);
-        fetchStudents(searchTerm, gradelevel, strand, section, adviser, sortOrder);
+        fetchStudents(searchTerm, gradelevel, strand, section, adviser, sortOrder, claimed);
 
       } catch (err) {
         console.error(err);
@@ -272,6 +279,7 @@ useEffect(() => {
           section,
           adviser,
           sort: sortOrder,
+          claimed,
           page: pageIndex + 1,
         })
       );
@@ -319,14 +327,14 @@ useEffect(() => {
     {/* ── Filter bar ── */}
     <div className="sticky top-12 z-10 bg-white flex w-full flex-col lg:flex-row items-center gap-2">
       <div className="flex lg:flex-row flex-col w-full gap-2">
-        <div className="flex-1">
+        {/* <div className="flex-1 w-full"> */}
           <input
-            className="text-xs lg:text-sm w-full border border-gray-400 p-2 py-3 rounded"
+            className="text-xs lg:text-sm lg:w-1/2 border border-gray-400 p-2 py-3 rounded"
             placeholder="Type LRN or name here"
             value={searchTerm}
             onChange={(e) => { setSearchTerm(e.target.value); setPageIndex(0); }}
           />
-        </div>
+        {/* </div> */}
         <select
           value={sortOrder}
           className="text-xs lg:text-sm p-2 py-3 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -383,6 +391,16 @@ useEffect(() => {
               ))}
             </select>
 
+            <select
+              value={claimed}
+              className="w-full flex-1 text-xs lg:text-sm p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => { setClaimed(e.target.value); setPageIndex(0); }}
+            >
+              <option value="">by Status</option>
+              <option value="1">Claimed</option>
+              <option value="0">Not Claimed</option>
+            </select>
+
                   {role === 'admin' && (
         <button
           className="text-xs lg:text-sm bg-gray-500 text-white p-3 rounded hover:bg-gray-400"
@@ -392,6 +410,7 @@ useEffect(() => {
             setStrand('');
             setSection('');
             setAdviser('');
+            setClaimed('');
             setSortOrder('date_added_desc');
             localStorage.removeItem('student-filters');
             navigate('/students', { replace: true });

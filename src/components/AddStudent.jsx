@@ -652,7 +652,7 @@ const deleteOldProfile = async (profileUrl) => {
             const savedFilters = localStorage.getItem('student-filters');
             if (savedFilters) {
                 try {
-                    const { search, gradelevel, strand, section, adviser, sort, page } = JSON.parse(savedFilters);
+                    const { search, gradelevel, strand, section, adviser, sort, claimed, page } = JSON.parse(savedFilters);
                     const params = new URLSearchParams();
                     if (search) params.set('search', search);
                     if (gradelevel) params.set('gradelevel', gradelevel);
@@ -660,6 +660,7 @@ const deleteOldProfile = async (profileUrl) => {
                     if (section) params.set('section', section);
                     if (adviser) params.set('adviser', adviser);
                     if (sort && sort !== 'date_added_desc') params.set('sort', sort);
+                    if (claimed !== undefined && claimed !== '') params.set('claimed', claimed);
                     if (page) params.set('page', page);
                     const query = params.toString();
                     navigate(query ? `/students?${query}` : "/students");

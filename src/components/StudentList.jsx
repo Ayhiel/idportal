@@ -346,36 +346,36 @@ useEffect(() => {
         </select>
         {role === 'admin' && (
     
-            <div className="flex gap-2 flex-row">
-              <select
-                value={gradelevel}
-                className="w-full flex-1 text-xs lg:text-sm p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                onChange={(e) => { setGradeLevel(e.target.value); setPageIndex(0); }}
-              >
-                <option value="">by Grade Level</option>
-                <option value="g7">Grade 7</option>
-                <option value="g8">Grade 8</option>
-                <option value="g9">Grade 9</option>
-                <option value="g10">Grade 10</option>
-                <option value="g11">Grade 11</option>
-                <option value="g12">Grade 12</option>
-              </select>
+          <div className="flex gap-2 flex-row">
+            <select
+              value={gradelevel}
+              className="w-full flex-1 text-xs lg:text-sm p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+              onChange={(e) => { setGradeLevel(e.target.value); setPageIndex(0); }}
+            >
+              <option value="">by Grade Level</option>
+              <option value="g7">Grade 7</option>
+              <option value="g8">Grade 8</option>
+              <option value="g9">Grade 9</option>
+              <option value="g10">Grade 10</option>
+              <option value="g11">Grade 11</option>
+              <option value="g12">Grade 12</option>
+            </select>
               
-              <select
-                value={strand}
-                className="w-full flex-1 text-xs lg:text-sm p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                onChange={(e) => { setStrand(e.target.value); setPageIndex(0); }}
-              >
-                <option value="">by Strand</option>
-                <option value="BAE">Business and Entrepreneurship (BAE)</option>
-                <option value="ASSH">Arts, Social Sciences, and Humanities (ASSH)</option>
-                <option value="ABM">Accountancy, Business, and Management (ABM)</option>
-                <option value="HUMSS">Humanities and Social Sciences (HUMSS)</option>
-                <option value="HE">Home Economics (HE)</option>
-                <option value="ICT">Information and Communication Technology (ICT)</option>
-              </select>
+            <select
+              value={strand}
+              className="w-full flex-1 text-xs lg:text-sm p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+              onChange={(e) => { setStrand(e.target.value); setPageIndex(0); }}
+            >
+              <option value="">by Strand</option>
+              <option value="BAE">Business and Entrepreneurship (BAE)</option>
+              <option value="ASSH">Arts, Social Sciences, and Humanities (ASSH)</option>
+              <option value="ABM">Accountancy, Business, and Management (ABM)</option>
+              <option value="HUMSS">Humanities and Social Sciences (HUMSS)</option>
+              <option value="HE">Home Economics (HE)</option>
+              <option value="ICT">Information and Communication Technology (ICT)</option>
+            </select>
 
-              <select
+            <select
               value={adviser}
               className="w-full flex-1 text-xs lg:text-sm p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
               onChange={(e) => { setAdviser(e.target.value); setPageIndex(0); }}
@@ -401,29 +401,26 @@ useEffect(() => {
               <option value="0">Not Claimed</option>
             </select>
 
-                  {role === 'admin' && (
-        <button
-          className="text-xs lg:text-sm bg-gray-500 text-white p-3 rounded hover:bg-gray-400"
-          onClick={() => {
-            setSearchTerm('');
-            setGradeLevel('');
-            setStrand('');
-            setSection('');
-            setAdviser('');
-            setClaimed('');
-            setSortOrder('date_added_desc');
-            localStorage.removeItem('student-filters');
-            navigate('/students', { replace: true });
-            fetchStudents();
-          }}
-        >
-          Clear Filter
-        </button>
-      )}
-            </div>
-
-            
-      
+            {role === 'admin' && (
+              <button
+                className="text-xs lg:text-sm bg-gray-500 text-white p-3 rounded hover:bg-gray-400"
+                onClick={() => {
+                  setSearchTerm('');
+                  setGradeLevel('');
+                  setStrand('');
+                  setSection('');
+                  setAdviser('');
+                  setClaimed('');
+                  setSortOrder('date_added_desc');
+                  localStorage.removeItem('student-filters');
+                  navigate('/students', { replace: true });
+                  fetchStudents();
+                }}
+              >
+                Clear Filter
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>

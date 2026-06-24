@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { supabase } from "./supabaseClient";
-import { BackwardIcon, CheckIcon, ForwardIcon, PencilSquareIcon, TrashIcon, UserCircleIcon} from '@heroicons/react/24/solid';
+import { BackwardIcon, ForwardIcon, PencilSquareIcon, TrashIcon, UserCircleIcon} from '@heroicons/react/24/solid';
 import CustomModal from "./CustomModal";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from './AuthContext';
@@ -547,22 +547,16 @@ useEffect(() => {
                 {/* Admin toggle + actions */}
                 <div className="flex items-center justify-between border-t border-gray-300 pt-2">
                   {(role === 'admin' || role === 'teacher') && (
-                    <label className={`inline-flex items-center gap-2 ${s.claimed ? '' : 'cursor-pointer'}`}>
+                    <label className="inline-flex items-center gap-2 cursor-pointer">
                       <div className="relative flex items-center">
                         <input
                           type="checkbox"
                           className="sr-only peer"
-                          checked={s.claimed}
-                          disabled={s.claimed}
+                          checked={!!s.claimed}
                           onChange={(e) => handleToggleClaimed(s.id, e.target.checked)}
                         />
                         <div className="w-11 h-6 rounded-full transition-colors bg-gray-400 peer-checked:bg-green-500"></div>
                         <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow transition-all peer-checked:translate-x-5"></div>
-                        {s.claimed && (
-                          <div className="absolute inset-0 flex items-center pl-1 pointer-events-none">
-                            <CheckIcon className="w-4 h-4 text-white" />
-                          </div>
-                        )}
                       </div>
                     </label>
                   )}
@@ -680,43 +674,17 @@ useEffect(() => {
                               </>
                             )}
                             <td className="border p-2">
-                              <label className={`inline-flex items-center gap-2 ${s.claimed ? '' : 'cursor-pointer'}`}>
-
+                              <label className="inline-flex items-center gap-2 cursor-pointer">
                                 <div className="relative flex items-center">
-
-                                  {/* Hidden checkbox (peer) */}
                                   <input
                                     type="checkbox"
                                     className="sr-only peer"
-                                    checked={s.claimed}
-                                    disabled={s.claimed}
+                                    checked={!!s.claimed}
                                     onChange={(e) => handleToggleClaimed(s.id, e.target.checked)}
                                   />
-
-                                  {/* Track */}
-                                  <div className="
-                                    w-11 h-6 rounded-full transition-colors
-                                    bg-gray-400 peer-checked:bg-green-500
-                                  "></div>
-
-                                  {/* Knob */}
-                                  <div className="
-                                    absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow
-                                    transition-all
-                                    peer-checked:translate-x-5
-                                  "></div>
-
-                                  {/* Checkmark overlay when claimed */}
-                                  {s.claimed ? (
-                                    <div className="absolute inset-0 flex items-center pl-1 pointer-events-none">
-                                      <CheckIcon className="w-4 h-4 text-white" />
-                                    </div>
-                                  ) : (
-                                    ""
-                                  )}
-
+                                  <div className="w-11 h-6 rounded-full transition-colors bg-gray-400 peer-checked:bg-green-500"></div>
+                                  <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow transition-all peer-checked:translate-x-5"></div>
                                 </div>
-
                                 <div className="flex flex-col items-center text-[8pt] font-medium ml-1">
                                   {s.claimed ? "Claimed" : "Not Claimed"}
                                   {s.claimed && s.date_claimed ? (
@@ -727,7 +695,6 @@ useEffect(() => {
                                     ""
                                   )}
                                 </div>
-
                               </label>
                             </td>
                           </>

@@ -22,6 +22,7 @@ export default function StudentList() {
   const [confirmCallback, setConfirmCallback] = useState(() => () => {});
   const [resultsFound, setResultsFound] = useState(0);
 
+  const [sortOrder, setSortOrder] = useState('date_added_desc');
   const [gradelevel, setGradeLevel] = useState('');
   const [strand, setStrand] = useState('');
   const [section, setSection] = useState('');
@@ -36,17 +37,20 @@ export default function StudentList() {
   const [selectAllRows, setSelectAllRows] = useState(false);
 
 
-const fetchStudents = useCallback(async (search = '', gradelevel = '', strand = '', section = '', adviser = '') => {
+const fetchStudents = useCallback(async (search = '', gradelevel = '', strand = '', section = '', adviser = '', sort = 'date_added_desc') => {
   if (!user?.id) {
     console.warn('No user logged in yet.');
     return;
   }
 
   try {
+    const orderCol = sort === 'name_asc' || sort === 'name_desc' ? 'lastname' : 'date_added';
+    const orderAsc = sort === 'name_asc' ? true : sort === 'name_desc' ? false : false;
+
     let query = supabase
       .from('tblstudents')
       .select('*', { count: 'exact' })
-      .order('date_added', { ascending: false });
+      .order(orderCol, { ascending: orderAsc });
 
     const userRole = (user.role || role || '').toLowerCase();
 
@@ -117,16 +121,18 @@ useEffect(() => {
   const sec = params.get('section') || '';
   const adv = params.get('adviser') || '';
   const page = params.get('page') || '';
+  const sort = params.get('sort') || 'date_added_desc';
 
   setSearchTerm(search);
   setGradeLevel(grade);
   setStrand(str);
   setSection(sec);
   setAdviser(adv);
+  setSortOrder(sort);
   setPageIndex(page ? Math.max(Number(page) - 1, 0) : 0);
 
   // Fetch students immediately
-  fetchStudents(search, grade, str, sec, adv);
+  fetchStudents(search, grade, str, sec, adv, sort);
 
 }, [fetchStudents, location.search, user]);
 
@@ -141,11 +147,11 @@ useEffect(() => {
   if (!user) return; // <-- important!
 
   const delayDebounce = setTimeout(() => {
-    fetchStudents(searchTerm, gradelevel, strand, section, adviser);
+    fetchStudents(searchTerm, gradelevel, strand, section, adviser, sortOrder);
   }, 300);
 
   return () => clearTimeout(delayDebounce);
-}, [fetchStudents, searchTerm, gradelevel, strand, section, adviser, user]); // add `user` as dependency
+}, [fetchStudents, searchTerm, gradelevel, strand, section, adviser, sortOrder, user]);
 
 
 
@@ -164,6 +170,7 @@ useEffect(() => {
         strand,
         section,
         adviser,
+        sort: sortOrder,
         page: pageIndex + 1,
       })
     );
@@ -211,7 +218,7 @@ useEffect(() => {
 
         setShowConfirm(false);
         setModalOpen(false);
-        fetchStudents(searchTerm, gradelevel, strand, section, adviser);
+        fetchStudents(searchTerm, gradelevel, strand, section, adviser, sortOrder);
 
       } catch (err) {
         console.error(err);
@@ -264,6 +271,7 @@ useEffect(() => {
           strand,
           section,
           adviser,
+          sort: sortOrder,
           page: pageIndex + 1,
         })
       );
@@ -319,6 +327,15 @@ useEffect(() => {
             onChange={(e) => { setSearchTerm(e.target.value); setPageIndex(0); }}
           />
         </div>
+        <select
+          value={sortOrder}
+          className="text-xs lg:text-sm p-2 py-3 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          onChange={(e) => { setSortOrder(e.target.value); setPageIndex(0); }}
+        >
+          <option value="date_added_desc">Sort by: Newest</option>
+          <option value="name_asc">Name A-Z</option>
+          <option value="name_desc">Name Z-A</option>
+        </select>
         {role === 'admin' && (
     
             <div className="flex gap-2 flex-row">
@@ -375,6 +392,7 @@ useEffect(() => {
             setStrand('');
             setSection('');
             setAdviser('');
+            setSortOrder('date_added_desc');
             localStorage.removeItem('student-filters');
             navigate('/students', { replace: true });
             fetchStudents();
@@ -528,7 +546,7 @@ useEffect(() => {
 
                 {/* Admin toggle + actions */}
                 <div className="flex items-center justify-between border-t border-gray-300 pt-2">
-                  {role === 'admin' && (
+                  {(role === 'admin' || role === 'teacher') && (
                     <label className={`inline-flex items-center gap-2 ${s.claimed ? '' : 'cursor-pointer'}`}>
                       <div className="relative flex items-center">
                         <input
@@ -653,10 +671,14 @@ useEffect(() => {
                         <td className="p-2">{s.parentnumber}</td>
                         <td className="p-2">BRGY. {s.brgy}, {s.town}, {s.province}</td>
                         <td className="p-2 text-center">{s.gradelevel}</td>
-                        {(role === 'admin') && (
+                        {(role === 'admin' || role === 'teacher') && (
                           <>
-                            <td className="p-2 text-center">{s.strand}</td>
-                            <td className="p-2 text-center">{s.section}</td>
+                            {role === 'admin' && (
+                              <>
+                                <td className="p-2 text-center">{s.strand}</td>
+                                <td className="p-2 text-center">{s.section}</td>
+                              </>
+                            )}
                             <td className="border p-2">
                               <label className={`inline-flex items-center gap-2 ${s.claimed ? '' : 'cursor-pointer'}`}>
 
@@ -710,7 +732,7 @@ useEffect(() => {
                             </td>
                           </>
                         )}
-                        {(role !== 'admin') && (
+                        {/* {(role !== 'admin') && (
                           <td className="border p-2">
                             <div className="flex flex-col items-center text-[8pt] font-medium ml-1">
                                 {s.claimed ? "Claimed" : "Not Claimed"}
@@ -723,7 +745,7 @@ useEffect(() => {
                                 )}
                               </div>
                           </td>
-                        )}
+                        )} */}
                         <td className="p-2">
                             <div className="flex flex-row gap-2">
                                 <PencilSquareIcon className="cursor-pointer w-8 h-8 text-green-700 mx-auto hover:text-green-900" onClick={() => handleEdit(s.id)} />

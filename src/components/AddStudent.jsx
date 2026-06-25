@@ -533,8 +533,8 @@ const brgy = addresses.length && form.province && form.town
             gradelevel: form.gradelevel,
             strand: form.strand,
             section: form.section,
-            adviser: form.adviser ? Number(form.adviser) : null,
-            profile_url: finalProfileUrl, // ✅ This should now have the correct URL
+            adviser: role === 'teacher' ? user.id : (form.adviser ? Number(form.adviser) : null),
+            profile_url: finalProfileUrl,
         };
 
 
@@ -854,6 +854,7 @@ const deleteOldProfile = async (profileUrl) => {
                         <option value="rbp">RBP</option>
                     </select> */}
                 </div>
+                {role !== 'teacher' && (
                 <select
                     value={form.adviser}
                     className="w-full mb-4 flex-1 p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
@@ -873,6 +874,7 @@ const deleteOldProfile = async (profileUrl) => {
                         ))
                     }
                 </select>
+                )}
                 {(role === 'admin' || role === 'teacher') &&
                     <div className="mb-4 flex flex-row items-center gap-2">
                      {/* Preview Image */}

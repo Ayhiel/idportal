@@ -197,10 +197,10 @@ export default function PrintId() {
                 <div
                     id="print-area"
                     ref={printRef}
-                    className="w-[297mm] h-[210mm] bg-white border px-4 pb-14 pt-4 border-gray-400 flex flex-col justify-between"
+                    className="w-[300mm] h-[199.9mm] bg-white border border-gray-400 flex flex-col justify-center gap-10"
                 >
                     {/* FRONT LAYOUT */}
-                        <div className="grid grid-cols-5 gap-2 h-[85.80mm]">
+                        <div className="grid grid-cols-5 justify-items-center shrink-0">
                             {currentStudents.slice(0, 5).map((student, index) => {
                                 const middleInitial = student.middlename ? student.middlename.charAt(0) + "." : "";
                                 const isSHS = student.gradelevel === "g11" || student.gradelevel === "g12";
@@ -208,18 +208,19 @@ export default function PrintId() {
                                 return (
                                     <div
                                         key={`front-${index}`}
-                                        style={{ 
-                                            backgroundImage: `url('${process.env.PUBLIC_URL}/images/${isSHS ? 'updatedFront.png' : 'jhsfront.png'}')`, 
-                                            width: '54.22mm' 
+                                        style={{
+                                            backgroundImage: `url('${process.env.PUBLIC_URL}/images/${isSHS ? 'updatedFront.png' : 'jhsfront.png'}')`,
+                                            width: '57.8mm',
+                                            height: '91.6mm'
                                         }}
-                                        className="bg-cover bg-center border border-gray-300 p-2 flex flex-col items-center text-xs"
+                                        className="bg-cover bg-center border border-gray-300 p-2 flex flex-col items-center text-xs overflow-hidden"
                                     >
                                         <div
                                         className={`border-2 ${isSHS ? 'border-yellow-500' : 'border-blue-950'} bg-white`}
                                         style={{
-                                            width: '25mm',
-                                            height: '25mm',
-                                            marginTop: isSHS ? '25.5mm' : '24mm',
+                                            width: '26mm',
+                                            height: '26mm',
+                                            marginTop: isSHS ? '28mm' : '26mm',
                                             overflow: 'hidden'
                                         }}
                                         >
@@ -231,11 +232,11 @@ export default function PrintId() {
                                         />
                                         </div>
 
-                                        <div className={`flex flex-col items-center text-center ${isSHS ? 'mt-[1.5mm]' : 'mt-[2.5mm]'}`}>
+                                        <div className={`flex flex-col items-center text-center ${isSHS ? 'mt-[2.4mm]' : 'mt-[4mm]'}`}>
                                             <div
                                                 className={`${isSHS ? 'text-yellow-500' : 'text-blue-1000'} font-extrabold uppercase leading-tight w-full text-center`}
                                                 style={{
-                                                    fontSize: 'clamp(8pt, 3.5vw, 12pt)',
+                                                    fontSize: 'clamp(9pt, 3.5vw, 12.5pt)',
                                                     whiteSpace: 'nowrap',
                                                     overflow: 'hidden',
                                                     textOverflow: 'ellipsis',
@@ -245,7 +246,7 @@ export default function PrintId() {
                                             </div>
                                             <div
                                                 className={`${isSHS ? 'text-yellow-500' : 'text-blue-1000'} font-extrabold uppercase`}
-                                                style={{ fontSize: '8.5pt', lineHeight: '14px' }}
+                                                style={{ fontSize: '9pt', lineHeight: '14px' }}
                                             >
                                                 {student.firstname} {middleInitial}
                                             </div>
@@ -255,7 +256,7 @@ export default function PrintId() {
                                         </div>
 
                                         {isSHS ? (
-                                            <div style={{ fontSize: '8px', lineHeight: '10px' }} className="flex flex-col justify-center h-[32px] w-40 text-black mt-3.5 text-center font-extrabold uppercase">
+                                            <div style={{ fontSize: '8px', lineHeight: '10px' }} className="flex flex-col justify-center h-[32px] w-40 text-black mt-5 text-center font-extrabold uppercase">
                                             <p style={strandLabelStyle(strandMap[student.strand])}>{strandMap[student.strand]}</p>
                                             {trackMap[student.gradelevel]?.[student.strand] && (
                                                 <p style={{ fontSize: '7px', marginTop: '2px' }} className="text-white font-bold">
@@ -272,18 +273,19 @@ export default function PrintId() {
                             })}
                         </div>
 
-                    <div className="h-[1px] bg-black"></div>
+                    <div className="h-[1px] bg-black -mt-2"></div>
 
                     {/* BACK LAYOUT */}
-                    <div className="grid grid-cols-5 gap-2 h-[85.80mm]">
+                    <div className="grid grid-cols-5 gap-2 h-[85.6mm] justify-items-center shrink-0">
                         {currentStudents.slice(0, 5).map((student, index) => (
                             <div
                                 key={`back-${index}`}
-                                style={{ 
-                                    backgroundImage: `url('${process.env.PUBLIC_URL}/images/updatedBack.png')`, 
-                                    width: '54.22mm' 
+                                style={{
+                                    backgroundImage: `url('${process.env.PUBLIC_URL}/images/updatedBack.png')`,
+                                    width: '57.8mm',
+                                    height: '91.6mm'
                                 }}
-                                className="bg-cover bg-center p-2 text-xs relative"
+                                className="bg-cover bg-center p-2 text-xs relative overflow-hidden"
                             >
                                 <div
                                     className="h-full w-full flex flex-col justify-center items-center transform rotate-180 uppercase"
@@ -322,7 +324,7 @@ export default function PrintId() {
                                                 lineHeight: '8px',
                                                 height: '10mm',
                                                 position: 'relative',
-                                                bottom: '4.9mm'
+                                                bottom: '3.7mm'
                                             }}
                                         >
                                             <p className="w-11/12">{`Brgy. ${student.brgy}, ${student.town}, ${student.province}`}</p>

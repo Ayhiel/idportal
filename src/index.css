@@ -9,17 +9,21 @@
 }
 
 @media print {
+  @page {
+    size: 300mm 199.9mm;
+    margin: 0;
+  }
+
+  html, body {
+    width: 300mm !important;
+    height: 199.9mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
   body * {
     visibility: hidden;
-  }
-
-  body {
-    overflow: hidden;
-  }
-
-  @page {
-    size: A4 landscape;
-    margin: 0;
   }
 
   .no-print {
@@ -34,8 +38,10 @@
     position: fixed;
     top: 0;
     left: 0;
-    width: 297mm;
-    height: 210mm;
+    width: 300mm !important;
+    height: 199.9mm !important;
+    padding: 0 !important;
+    border: none !important;
     overflow: hidden;
     page-break-before: avoid;
     page-break-after: avoid;

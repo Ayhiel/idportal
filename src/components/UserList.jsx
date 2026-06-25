@@ -137,7 +137,6 @@ export default function UserList() {
             <option value="">All Roles</option>
             <option value="admin">Admin</option>
             <option value="teacher">Teacher</option>
-            <option value="student">Student</option>
           </select>
 
           <button
@@ -159,7 +158,7 @@ export default function UserList() {
                 <th className="p-3">Username</th>
                 <th className="p-3">Email</th>
                 <th className="p-3">Role</th>
-                <th className="p-3 text-center">Action</th>
+                
               </tr>
             </thead>
             <tbody>
@@ -184,16 +183,6 @@ export default function UserList() {
                     <td className="p-3">{user.username || '-'}</td>
                     <td className="p-3">{user.email || '-'}</td>
                     <td className="p-3 uppercase">{user.role || '-'}</td>
-                    <td className="p-3 text-center">
-                      <button
-                        type="button"
-                        onClick={() => handleResetPassword(user)}
-                        disabled={resettingUserId === user.id}
-                        className="rounded bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {resettingUserId === user.id ? 'Resetting...' : 'Set Default Password'}
-                      </button>
-                    </td>
                   </tr>
                 ))
               )}

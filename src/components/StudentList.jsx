@@ -340,9 +340,9 @@ useEffect(() => {
           className="text-xs lg:text-sm p-2 py-3 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
           onChange={(e) => { setSortOrder(e.target.value); setPageIndex(0); }}
         >
-          <option value="date_added_desc">Sort by: Newest</option>
-          <option value="name_asc">Name A-Z</option>
-          <option value="name_desc">Name Z-A</option>
+          <option value="date_added_desc">SORT BY: NEWEST</option>
+          <option value="name_asc">NAME A-Z</option>
+          <option value="name_desc">NAME Z-A</option>
         </select>
         {role === 'admin' && (
     
@@ -352,13 +352,13 @@ useEffect(() => {
               className="w-full flex-1 text-xs lg:text-sm p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
               onChange={(e) => { setGradeLevel(e.target.value); setPageIndex(0); }}
             >
-              <option value="">by Grade Level</option>
-              <option value="g7">Grade 7</option>
-              <option value="g8">Grade 8</option>
-              <option value="g9">Grade 9</option>
-              <option value="g10">Grade 10</option>
-              <option value="g11">Grade 11</option>
-              <option value="g12">Grade 12</option>
+              <option value="">BY GRADE LEVEL</option>
+              <option value="g7">GRADE 7</option>
+              <option value="g8">GRADE 8</option>
+              <option value="g9">GRADE 9</option>
+              <option value="g10">GRADE 10</option>
+              <option value="g11">GRADE 11</option>
+              <option value="g12">GRADE 12</option>
             </select>
               
             <select
@@ -366,7 +366,7 @@ useEffect(() => {
               className="w-full flex-1 text-xs lg:text-sm p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
               onChange={(e) => { setStrand(e.target.value); setPageIndex(0); }}
             >
-              <option value="">by Strand</option>
+              <option value="">BY STRAND</option>
               <option value="BAE">Business and Entrepreneurship (BAE)</option>
               <option value="ASSH">Arts, Social Sciences, and Humanities (ASSH)</option>
               <option value="ABM">Accountancy, Business, and Management (ABM)</option>
@@ -380,7 +380,7 @@ useEffect(() => {
               className="w-full flex-1 text-xs lg:text-sm p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
               onChange={(e) => { setAdviser(e.target.value); setPageIndex(0); }}
             >
-              <option value="">{adviserLoading ? 'Loading advisers...' : 'by Adviser'}</option>
+              <option value="">{adviserLoading ? 'Loading advisers...' : 'BY ADVISER'}</option>
               {!adviserLoading && advisers.length === 0 && (
                 <option value="" disabled>No advisers found</option>
               )}
@@ -396,9 +396,9 @@ useEffect(() => {
               className="w-full flex-1 text-xs lg:text-sm p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               onChange={(e) => { setClaimed(e.target.value); setPageIndex(0); }}
             >
-              <option value="">by Status</option>
-              <option value="1">Claimed</option>
-              <option value="0">Not Claimed</option>
+              <option value="">BY STATUS</option>
+              <option value="1">CLAIMED</option>
+              <option value="0">NOT CLAIMED</option>
             </select>
 
             {role === 'admin' && (
